@@ -30,9 +30,16 @@ func isInTest() bool {
 	return false
 }
 
+type logConfig struct {
+	Level string `mapstructure:"level"`
+	File  string `mapstructure:"file"`
+	Debug bool   `mapstructure:"debug"`
+}
+
 func (*logConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("log.level", "info", "log level")
 	flagSet.String("log.file", "", "log file path")
+	flagSet.Bool("log.debug", false, "log debug")
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(err)
 	}
@@ -40,8 +47,11 @@ func (*logConfiguration) Register(flagSet *pflag.FlagSet) {
 }
 
 func (*logConfiguration) Read() {
-	logFile := viper.GetString("log.file")
-	logLevel := viper.GetString("log.level")
+	var c logConfig
+	err := common.DecodeFromMapstructure(viper.AllSettings()["log"], &c)
+	if err != nil {
+		panic(err)
+	}
 
 	if isInTest() {
 		return
@@ -49,18 +59,18 @@ func (*logConfiguration) Read() {
 
 	var config zap.Config
 
-	if common.Version == "dev" {
+	if common.IsDev() || c.Debug {
 		config = zap.NewDevelopmentConfig()
 		config.EncoderConfig = log.NewColoredDevelopmentEncoderConfig()
 	} else {
 		config = zap.NewProductionConfig()
 	}
-	if logFile != "" {
-		config.OutputPaths = []string{logFile}
+	if c.File != "" {
+		config.OutputPaths = []string{c.File}
 	}
 
-	if logLevel != "" {
-		level, err := zapcore.ParseLevel(logLevel)
+	if c.Level != "" {
+		level, err := zapcore.ParseLevel(c.Level)
 		if err != nil {
 			panic(err)
 		}
