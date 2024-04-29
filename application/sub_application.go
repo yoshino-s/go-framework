@@ -2,88 +2,62 @@ package application
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/sourcegraph/conc"
+	"github.com/sourcegraph/conc/iter"
+	"github.com/yoshino-s/go-framework/configuration"
+	"go.uber.org/zap"
 )
 
+var _ Application = (*SubApplication)(nil)
+
 type SubApplication struct {
-	application     Application
-	subApplications []Application
+	*EmptyApplication
+	sub []Application
 }
 
-func NewSubApplication(a Application) *SubApplication {
+func NewSubApplication() *SubApplication {
 	return &SubApplication{
-		application:     a,
-		subApplications: []Application{},
+		EmptyApplication: NewEmptyApplication(),
+		sub:              make([]Application, 0),
 	}
 }
 
-func (a *SubApplication) Add(sa Application) {
-	a.subApplications = append(a.subApplications, sa)
+func (a *SubApplication) Append(sa Application) {
+	a.sub = append(a.sub, sa)
 }
 
-func (a *SubApplication) Setup(ctx context.Context) { // sub first, then main
-	wg := conc.NewWaitGroup()
-	for _, sa := range a.subApplications {
-		func(sa Application) {
-			wg.Go(func() {
-				sa.Setup(ctx)
-			})
-		}(sa)
-	}
-	wg.Wait()
+func (a *SubApplication) Configuration() configuration.Configuration {
+	return nil
+}
 
-	if a.application != nil {
-		a.application.Setup(ctx)
+func (a *SubApplication) SetLogger(l *zap.Logger) {
+	a.Logger = l
+	for _, sa := range a.sub {
+		sa.SetLogger(l)
 	}
 }
 
-func (a *SubApplication) Run(ctx context.Context) { // main and sub concurrently
-	wg := conc.NewWaitGroup()
-	for _, sa := range a.subApplications {
-		func(sa Application) {
-			wg.Go(func() {
-				sa.Run(ctx)
-			})
-		}(sa)
-	}
-	if a.application != nil {
-		wg.Go(func() {
-			a.application.Run(ctx)
-		})
-	}
-	wg.Wait()
+func (a *SubApplication) Setup(ctx context.Context) {
+	a.SetLogger(a.Logger)
+	iter.ForEach(a.sub, func(sa *Application) {
+		a.Logger.Debug("setup sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
+		(*sa).Setup(ctx)
+	})
 }
 
-func (a *SubApplication) Reload(ctx context.Context) { // sub first, then main
-	wg := conc.NewWaitGroup()
-	for _, sa := range a.subApplications {
-		func(sa Application) {
-			wg.Go(func() {
-				sa.Reload(ctx)
-			})
-		}(sa)
-	}
-	wg.Wait()
-
-	if a.application != nil {
-		a.application.Reload(ctx)
-	}
+func (a *SubApplication) Run(ctx context.Context) {
+	iter.ForEach(a.sub, func(sa *Application) {
+		if *sa != nil {
+			a.Logger.Debug("run sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
+			(*sa).Run(ctx)
+		}
+	})
 }
 
-func (a *SubApplication) Close(ctx context.Context) { // main first, then sub
-	if a.application != nil {
-		a.application.Close(ctx)
-	}
-
-	wg := conc.NewWaitGroup()
-	for _, sa := range a.subApplications {
-		func(sa Application) {
-			wg.Go(func() {
-				sa.Close(ctx)
-			})
-		}(sa)
-	}
-	wg.Wait()
-
+func (a *SubApplication) Close(ctx context.Context) {
+	iter.ForEach(a.sub, func(sa *Application) {
+		a.Logger.Debug("close sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
+		(*sa).Close(ctx)
+	})
 }

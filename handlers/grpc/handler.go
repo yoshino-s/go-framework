@@ -22,8 +22,8 @@ func New(config Config) (*Handler, error) {
 	unaryServerInterceptor := []grpc.UnaryServerInterceptor{}
 	streamServerInterceptor := []grpc.StreamServerInterceptor{}
 
-	if config.Log {
-		logging.UnaryServerInterceptor(interceptorLogger(zap.L()))
+	if config.Logger != nil {
+		logging.UnaryServerInterceptor(interceptorLogger(config.Logger))
 	}
 
 	h.Server = grpc.NewServer(

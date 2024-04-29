@@ -1,5 +1,7 @@
 package grpc
 
+import "go.uber.org/zap"
+
 type Config struct {
-	Log bool
+	Logger *zap.Logger
 }

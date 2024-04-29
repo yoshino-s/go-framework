@@ -4,25 +4,24 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
-	"github.com/yoshino-s/go-framework/configuration"
+	"github.com/yoshino-s/go-framework/demo/app"
 	"github.com/yoshino-s/go-framework/handlers/http"
 )
 
-var serveCmd = &cobra.Command{
-	Use: "serve",
-	Run: func(cmd *cobra.Command, args []string) {
-		handler, err := http.New(
-			configuration.HttpHandlerConfiguration.Config,
-		)
-		if err != nil {
-			panic(err)
-		}
-		App.Add(handler)
-		App.Go(context.TODO())
-	},
-}
+var (
+	handler  = http.New()
+	demoApp  = app.New()
+	serveCmd = &cobra.Command{
+		Use: "serve",
+		Run: func(cmd *cobra.Command, args []string) {
+			App.SubApplication.Append(handler)
+			App.SubApplication.Append(demoApp)
+			App.Go(context.TODO())
+		},
+	}
+)
 
 func init() {
-	configuration.HttpHandlerConfiguration.Register(serveCmd.Flags())
+	handler.Configuration().Register(serveCmd.Flags())
 	rootCmd.AddCommand(serveCmd)
 }

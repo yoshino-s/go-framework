@@ -102,9 +102,7 @@ func newConfig(configFns ...func(*SwaggerConfig)) *SwaggerConfig {
 }
 
 func (h *Handler) Swagger(prefix string, apiJSON []byte, options ...func(*SwaggerConfig)) {
-	if strings.HasSuffix(prefix, "/") {
-		prefix = prefix[:len(prefix)-1]
-	}
+	prefix = strings.TrimRight(prefix, "/")
 
 	config := newConfig(options...)
 	config.URL = path.Join(prefix, "doc.json")

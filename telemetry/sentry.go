@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func InitSentry(dsn string) {
+func initSentry(dsn string) {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              dsn,
 		Debug:            common.IsDev(),

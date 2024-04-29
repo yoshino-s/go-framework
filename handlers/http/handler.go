@@ -11,6 +11,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/yoshino-s/go-framework/application"
+	"github.com/yoshino-s/go-framework/common"
+	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/telemetry"
 	"go.uber.org/zap"
 )
@@ -32,36 +34,52 @@ var SkipLog = map[string]bool{
 	"/version": true,
 }
 
-func New(config Config) (*Handler, error) {
-	e := echo.New()
-	logger := zap.L()
-
+func New() *Handler {
 	h := &Handler{
-		Echo:   e,
-		config: config,
+		Echo:   echo.New(),
+		config: DefaultConfig,
 		Ready:  &atomic.Bool{},
 		Health: &atomic.Bool{},
-		logger: logger,
+		logger: zap.NewNop(),
 	}
 
-	if config.Debug {
-		e.Debug = true
-		logger.Info("debug mode enabled")
+	return h
+}
+
+func (h *Handler) SetLogger(l *zap.Logger) {
+	h.logger = l
+}
+
+func (h *Handler) Configuration() configuration.Configuration {
+	return &httpHandlerConfiguration{config: &h.config}
+}
+
+func (h *Handler) Setup(context.Context) {
+	h.Ready.Store(true)
+	h.Health.Store(true)
+	h.logger = h.logger.Named("http")
+
+	h.HideBanner = true
+	h.HidePort = true
+
+	if h.config.Debug {
+		h.Echo.Debug = true
+		h.logger.Info("debug mode enabled")
 	}
 
 	if telemetry.IsSentryInitialized() {
-		e.Use(sentryecho.New(sentryecho.Options{}))
+		h.Use(sentryecho.New(sentryecho.Options{}))
 	}
 
-	if config.Log {
-		e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+	if h.config.Log {
+		h.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 			LogURI:    true,
 			LogStatus: true,
 			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 				if _, ok := SkipLog[v.URI]; ok {
 					return nil
 				}
-				logger.Info("request",
+				h.logger.Info("request",
 					zap.String("URI", v.URI),
 					zap.Int("status", v.Status),
 				)
@@ -70,14 +88,14 @@ func New(config Config) (*Handler, error) {
 		}))
 	}
 
-	if config.Feature.Has(FeatureVersion) {
-		e.GET("/version", func(c echo.Context) error {
-			return c.String(http.StatusOK, "1")
+	if h.config.Feature.Has(FeatureVersion) {
+		h.GET("/version", func(c echo.Context) error {
+			return c.String(http.StatusOK, common.Version)
 		})
 	}
 
-	if config.Feature.Has(FeatureHealth) {
-		e.GET("/healthz", func(c echo.Context) error {
+	if h.config.Feature.Has(FeatureHealth) {
+		h.GET("/healthz", func(c echo.Context) error {
 			if h.Health.Load() {
 				return c.String(http.StatusOK, "OK")
 			} else {
@@ -86,8 +104,8 @@ func New(config Config) (*Handler, error) {
 		})
 	}
 
-	if config.Feature.Has(FeatureReady) {
-		e.GET("/readyz", func(c echo.Context) error {
+	if h.config.Feature.Has(FeatureReady) {
+		h.GET("/readyz", func(c echo.Context) error {
 			if h.Ready.Load() {
 				return c.String(http.StatusOK, "OK")
 			}
@@ -95,21 +113,9 @@ func New(config Config) (*Handler, error) {
 		})
 	}
 
-	if config.Feature.Has(FeatureMetrics) {
-		e.GET("/metrics", echoprometheus.NewHandler())
+	if h.config.Feature.Has(FeatureMetrics) {
+		h.GET("/metrics", echoprometheus.NewHandler())
 	}
-
-	return h, nil
-}
-
-func (h *Handler) Setup(context.Context) {
-	h.Ready.Store(true)
-	h.Health.Store(true)
-}
-
-func (h *Handler) Reload(context.Context) {
-	h.Health.Store(false)
-	defer h.Health.Store(true)
 }
 
 func (h *Handler) Run(context.Context) {
@@ -126,15 +132,15 @@ func (h *Handler) Run(context.Context) {
 			h.logger.Sugar().Debugf("%s %s", router.Method, router.Path)
 		}
 	}
-	if err := h.Start(h.config.ListenAddr); err != nil {
+	if err := h.Start(h.config.ListenAddr); err != nil && err != http.ErrServerClosed {
 		h.logger.Error("failed to start server", zap.Error(err))
 	}
 }
 
-func (h *Handler) Close(context.Context) {
+func (h *Handler) Close(c context.Context) {
 	h.Ready.Store(false)
 	h.Health.Store(false)
-	if err := h.Echo.Close(); err != nil {
+	if err := h.Echo.Shutdown(c); err != nil {
 		h.logger.Error("failed to close server", zap.Error(err))
 	}
 }

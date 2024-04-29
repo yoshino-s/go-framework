@@ -1,4 +1,4 @@
-package configuration
+package application
 
 import (
 	"runtime/debug"
@@ -7,15 +7,17 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/yoshino-s/go-framework/common"
+	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-var _ Configuration = (*logConfiguration)(nil)
-var LogConfiguration = &logConfiguration{}
+var _ configuration.Configuration = (*logConfiguration)(nil)
 
-type logConfiguration struct{}
+type logConfiguration struct {
+	logger **zap.Logger
+}
 
 func isInTest() bool {
 	stacks := strings.Split(string(debug.Stack()), "\n")
@@ -36,17 +38,17 @@ type logConfig struct {
 	Debug bool   `mapstructure:"debug"`
 }
 
-func (*logConfiguration) Register(flagSet *pflag.FlagSet) {
+func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("log.level", "info", "log level")
 	flagSet.String("log.file", "", "log file path")
 	flagSet.Bool("log.debug", false, "log debug")
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(err)
 	}
-	Register(LogConfiguration)
+	configuration.Register(l)
 }
 
-func (*logConfiguration) Read() {
+func (l *logConfiguration) Read() {
 	var c logConfig
 	err := common.DecodeFromMapstructure(viper.AllSettings()["log"], &c)
 	if err != nil {
@@ -81,5 +83,5 @@ func (*logConfiguration) Read() {
 	if err != nil {
 		panic(err)
 	}
-	zap.ReplaceGlobals(logger)
+	(*l.logger) = logger
 }

@@ -5,22 +5,28 @@ import (
 	"github.com/yoshino-s/go-framework/application"
 	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
+	"github.com/yoshino-s/go-framework/telemetry"
 )
 
 var App = application.NewMainApplication()
 
-var rootCmd = &cobra.Command{
-	Use: "demo",
-}
+var (
+	telemetry_app = telemetry.New()
+	rootCmd       = &cobra.Command{
+		Use: "demo",
+	}
+)
 
 func init() {
 	cobra.OnInitialize(func() {
 		configuration.Setup("demo")
+
+		App.Append(telemetry_app)
 	})
 
-	configuration.LogConfiguration.Register(rootCmd.PersistentFlags())
+	App.Configuration().Register(rootCmd.PersistentFlags())
+	telemetry_app.Configuration().Register(rootCmd.PersistentFlags())
 	configuration.GenerateConfiguration.Register(rootCmd.PersistentFlags())
-	configuration.TelemetryConfiguration.Register(rootCmd.PersistentFlags())
 
 	rootCmd.AddCommand(common.VersionCmd)
 }

@@ -72,3 +72,7 @@ func DecodeFromMapstructure(input interface{}, result interface{}) error {
 	}
 	return err
 }
+
+func MustDecodeFromMapstructure(input interface{}, result interface{}) {
+	MustNoError(DecodeFromMapstructure(input, result))
+}
