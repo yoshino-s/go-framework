@@ -31,35 +31,28 @@ func (f Feature) Remove(flag Feature) Feature {
 	return f &^ flag
 }
 
-type Config struct {
-	Log        bool    `mapstructure:"log"`
-	Debug      bool    `mapstructure:"debug"`
-	Feature    Feature `mapstructure:"feature"`
-	ListenAddr string  `mapstructure:"addr"`
+type config struct {
+	Log         bool    `mapstructure:"log"`
+	Debug       bool    `mapstructure:"debug"`
+	Feature     Feature `mapstructure:"feature"`
+	ListenAddr  string  `mapstructure:"addr"`
+	BehindProxy bool    `mapstructure:"behind_proxy"`
+	ExternalURL string  `mapstructure:"external_url"`
 }
 
-var DefaultConfig = Config{
-	Log:        true,
-	Debug:      false,
-	Feature:    FeatureAll,
-	ListenAddr: ":8080",
-}
+var _ configuration.Configuration = (*config)(nil)
 
-var _ configuration.Configuration = (*httpHandlerConfiguration)(nil)
-
-type httpHandlerConfiguration struct {
-	config *Config
-}
-
-func (c *httpHandlerConfiguration) Register(flagSet *pflag.FlagSet) {
+func (c *config) Register(flagSet *pflag.FlagSet) {
+	flagSet.String("http.external_url", "http://127.0.0.1:8080", "external url")
 	flagSet.Bool("http.log", false, "enable http log")
 	flagSet.Bool("http.debug", false, "enable http debug")
 	flagSet.String("http.addr", ":8080", "http listen address")
 	flagSet.Uint16("http.feature", uint16(FeatureAll), "http feature")
+	flagSet.Bool("http.behind_proxy", false, "http behind proxy")
 	common.MustNoError(viper.BindPFlags(flagSet))
 	configuration.Register(c)
 }
 
-func (c *httpHandlerConfiguration) Read() {
-	common.MustDecodeFromMapstructure(viper.AllSettings()["http"], c.config)
+func (c *config) Read() {
+	common.MustDecodeFromMapstructure(viper.AllSettings()["http"], c)
 }

@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/yoshino-s/go-framework/application"
-	"github.com/yoshino-s/go-framework/common"
+	"github.com/yoshino-s/go-framework/cmd"
 	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/telemetry"
 )
@@ -28,7 +28,7 @@ func init() {
 	telemetry_app.Configuration().Register(rootCmd.PersistentFlags())
 	configuration.GenerateConfiguration.Register(rootCmd.PersistentFlags())
 
-	rootCmd.AddCommand(common.VersionCmd)
+	rootCmd.AddCommand(cmd.VersionCmd)
 }
 
 // Execute executes the root command.
