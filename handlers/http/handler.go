@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"sort"
+	"strings"
 	"sync/atomic"
 
 	sentryecho "github.com/getsentry/sentry-go/echo"
@@ -31,12 +32,6 @@ type Handler struct {
 	Health *atomic.Bool
 
 	oidcAuthenticationRegisterFunc oidc.RegisterFunc
-}
-
-var SkipLog = map[string]bool{
-	"/healthz": true,
-	"/readyz":  true,
-	"/version": true,
 }
 
 func New() *Handler {
@@ -104,7 +99,7 @@ func (h *Handler) Setup(context.Context) {
 			LogURI:    true,
 			LogStatus: true,
 			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-				if _, ok := SkipLog[v.URI]; ok {
+				if strings.HasPrefix(v.URI, "/-/") {
 					return nil
 				}
 				h.logger.Info("request",
