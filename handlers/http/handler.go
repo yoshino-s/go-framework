@@ -24,10 +24,10 @@ var _ application.Application = (*Handler)(nil)
 var _ http.Handler = (*Handler)(nil)
 
 type Handler struct {
+	*application.EmptyApplication
 	*echo.Echo
 	config
 
-	logger *zap.Logger
 	Ready  *atomic.Bool
 	Health *atomic.Bool
 
@@ -36,18 +36,14 @@ type Handler struct {
 
 func New() *Handler {
 	h := &Handler{
-		Echo:   echo.New(),
-		config: config{},
-		Ready:  &atomic.Bool{},
-		Health: &atomic.Bool{},
-		logger: zap.NewNop(),
+		EmptyApplication: application.NewEmptyApplication(),
+		Echo:             echo.New(),
+		config:           config{},
+		Ready:            &atomic.Bool{},
+		Health:           &atomic.Bool{},
 	}
 
 	return h
-}
-
-func (h *Handler) SetLogger(l *zap.Logger) {
-	h.logger = l
 }
 
 func (h *Handler) SetOIDCAuthentication(auth *oidc.OIDCAuthentication, RedirectPath string, CallbackPath string, PostProcess oidc.PostProcessFunc) error {
@@ -68,26 +64,54 @@ func (h *Handler) Configuration() configuration.Configuration {
 	return &h.config
 }
 
-func (h *Handler) Setup(context.Context) {
+func (h *Handler) Setup(ctx context.Context) {
+	h.EmptyApplication.Setup(ctx)
+
 	h.Ready.Store(true)
 	h.Health.Store(true)
-	h.logger = h.logger.Named("http")
 
 	h.HideBanner = true
 	h.HidePort = true
 
-	h.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if h := c.Request().Header.Get("X-Forwarded-Host"); h != "" {
-				c.Request().Host = h
-			}
-			return next(c)
-		}
-	})
+	h.Echo.Logger = toEchoLogger(h.EmptyApplication.Logger)
 
-	if h.config.Debug {
-		h.Echo.Debug = true
-		h.logger.Debug("debug mode enabled")
+	if h.config.BehindProxy {
+		h.IPExtractor = echo.ExtractIPFromXFFHeader()
+		h.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				if h := c.Request().Header.Get("X-Forwarded-Host"); h != "" {
+					c.Request().Host = h
+				}
+				return next(c)
+			}
+		})
+	}
+
+	h.HTTPErrorHandler = func(err error, c echo.Context) {
+		code := http.StatusInternalServerError
+		var message interface{}
+		if he, ok := err.(*echo.HTTPError); ok {
+			code = he.Code
+			message = he.Message
+			if message == nil {
+				message = http.StatusText(code)
+			}
+		} else {
+			message = err.Error()
+		}
+		if !c.Response().Committed {
+			if c.Request().Method == http.MethodHead {
+				err = c.NoContent(code)
+			} else {
+				err = c.JSON(code, map[string]interface{}{
+					"message": message,
+					"code":    code,
+				})
+			}
+			if err != nil {
+				c.Logger().Error(err)
+			}
+		}
 	}
 
 	if telemetry.IsSentryInitialized() {
@@ -102,7 +126,7 @@ func (h *Handler) Setup(context.Context) {
 				if strings.HasPrefix(v.URI, "/-/") {
 					return nil
 				}
-				h.logger.Info("request",
+				h.EmptyApplication.Logger.Info("request",
 					zap.String("URI", v.URI),
 					zap.Int("status", v.Status),
 				)
@@ -146,21 +170,19 @@ func (h *Handler) Setup(context.Context) {
 }
 
 func (h *Handler) Run(context.Context) {
-	if h.config.Debug {
-		routers := h.Routes()
-		sort.Slice(routers, func(i, j int) bool {
-			if routers[i].Path == routers[j].Path {
-				return routers[i].Method < routers[j].Method
-			} else {
-				return routers[i].Path < routers[j].Path
-			}
-		})
-		for _, router := range routers {
-			h.logger.Sugar().Debugf("%s %s", router.Method, router.Path)
+	routers := h.Routes()
+	sort.Slice(routers, func(i, j int) bool {
+		if routers[i].Path == routers[j].Path {
+			return routers[i].Method < routers[j].Method
+		} else {
+			return routers[i].Path < routers[j].Path
 		}
+	})
+	for _, router := range routers {
+		h.EmptyApplication.Logger.Sugar().Debugf("%s %s", router.Method, router.Path)
 	}
 	if err := h.StartH2CServer(h.config.ListenAddr, &http2.Server{}); err != nil && err != http.ErrServerClosed {
-		h.logger.Error("failed to start server", zap.Error(err))
+		h.EmptyApplication.Logger.Error("failed to start server", zap.Error(err))
 	}
 }
 
@@ -168,7 +190,7 @@ func (h *Handler) Close(c context.Context) {
 	h.Ready.Store(false)
 	h.Health.Store(false)
 	if err := h.Echo.Shutdown(c); err != nil {
-		h.logger.Error("failed to close server", zap.Error(err))
+		h.EmptyApplication.Logger.Error("failed to close server", zap.Error(err))
 	}
 }
 

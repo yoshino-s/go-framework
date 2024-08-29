@@ -33,7 +33,6 @@ func (f Feature) Remove(flag Feature) Feature {
 
 type config struct {
 	Log         bool    `mapstructure:"log"`
-	Debug       bool    `mapstructure:"debug"`
 	Feature     Feature `mapstructure:"feature"`
 	ListenAddr  string  `mapstructure:"addr"`
 	BehindProxy bool    `mapstructure:"behind_proxy"`
@@ -45,7 +44,6 @@ var _ configuration.Configuration = (*config)(nil)
 func (c *config) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("http.external_url", "http://127.0.0.1:8080", "external url")
 	flagSet.Bool("http.log", false, "enable http log")
-	flagSet.Bool("http.debug", false, "enable http debug")
 	flagSet.String("http.addr", ":8080", "http listen address")
 	flagSet.Uint16("http.feature", uint16(FeatureAll), "http feature")
 	flagSet.Bool("http.behind_proxy", false, "http behind proxy")
