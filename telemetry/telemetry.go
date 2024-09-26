@@ -1,8 +1,6 @@
 package telemetry
 
 import (
-	"context"
-
 	"github.com/yoshino-s/go-framework/application"
 	"github.com/yoshino-s/go-framework/configuration"
 )
@@ -24,11 +22,5 @@ func New() *Telemetry {
 func (t *Telemetry) Configuration() configuration.Configuration {
 	return &telemetryConfiguration{
 		config: &t.config,
-	}
-}
-
-func (t *Telemetry) Setup(context.Context) {
-	if t.config.SentryDSN != "" {
-		initSentry(t.config.SentryDSN)
 	}
 }

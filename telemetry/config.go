@@ -30,4 +30,8 @@ func (c *telemetryConfiguration) Read() {
 	if err != nil {
 		panic(err)
 	}
+
+	if c.config.SentryDSN != "" {
+		initSentry(c.config.SentryDSN)
+	}
 }
