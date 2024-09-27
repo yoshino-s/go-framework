@@ -9,18 +9,15 @@ var _ application.Application = &Telemetry{}
 
 type Telemetry struct {
 	*application.EmptyApplication
-	config config
+	config telemetryConfiguration
 }
 
 func New() *Telemetry {
 	return &Telemetry{
 		EmptyApplication: application.NewEmptyApplication(),
-		config:           config{},
 	}
 }
 
 func (t *Telemetry) Configuration() configuration.Configuration {
-	return &telemetryConfiguration{
-		config: &t.config,
-	}
+	return &t.config
 }

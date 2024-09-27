@@ -6,15 +6,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func initSentry(dsn string) {
+func (c *telemetryConfiguration) initSentry() {
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn:              dsn,
-		Debug:            common.IsDev(),
-		EnableTracing:    true,
-		AttachStacktrace: true,
-		TracesSampleRate: 1.0,
-		SendDefaultPII:   true,
-		Release:          common.Version,
+		Dsn:                c.SentryDSN,
+		Debug:              common.IsDev(),
+		EnableTracing:      true,
+		AttachStacktrace:   true,
+		TracesSampleRate:   c.TracesSampleRate,
+		ProfilesSampleRate: c.ProfilesSampleRate,
+		SendDefaultPII:     true,
+		Release:            common.Version,
 	})
 	if err != nil {
 		zap.L().Error("sentry.Init failed", zap.Error(err))
