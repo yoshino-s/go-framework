@@ -94,7 +94,7 @@ func (h *Handler) Setup(ctx context.Context) {
 		var message interface{}
 		httpError := &echo.HTTPError{}
 		appError := &framework_errors.AppError{}
-		if errors.As(err, httpError) {
+		if errors.As(err, &httpError) {
 			code = httpError.Code
 			message = httpError.Message
 			if message == nil {
