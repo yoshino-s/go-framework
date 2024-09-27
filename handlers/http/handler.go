@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	sentryecho "github.com/getsentry/sentry-go/echo"
+	"github.com/go-errors/errors"
 	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -15,6 +16,7 @@ import (
 	"github.com/yoshino-s/go-framework/authentication/oidc"
 	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
+	framework_errors "github.com/yoshino-s/go-framework/errors"
 	"github.com/yoshino-s/go-framework/telemetry"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -90,12 +92,17 @@ func (h *Handler) Setup(ctx context.Context) {
 	h.HTTPErrorHandler = func(err error, c echo.Context) {
 		code := http.StatusInternalServerError
 		var message interface{}
-		if he, ok := err.(*echo.HTTPError); ok {
-			code = he.Code
-			message = he.Message
+		httpError := &echo.HTTPError{}
+		appError := &framework_errors.AppError{}
+		if errors.As(err, httpError) {
+			code = httpError.Code
+			message = httpError.Message
 			if message == nil {
 				message = http.StatusText(code)
 			}
+		} else if errors.As(err, &appError) {
+			code = appError.Code()
+			message = appError.Error()
 		} else {
 			message = err.Error()
 		}

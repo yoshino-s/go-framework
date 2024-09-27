@@ -1,73 +1,60 @@
 package errors
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
-	"runtime/debug"
+
+	"github.com/go-errors/errors"
 )
 
 type AppError struct {
-	trace []byte
-	err   error
-	code  int
+	error   error
+	message string
+	code    int
 }
 
-var (
-	ErrInternal = errors.New("internal error")
-)
-
-func NewMissingComponentError(component string) *AppError {
+func NewMissingComponentError(component string) error {
 	return New(component+" is missing", http.StatusInternalServerError)
 }
 
-// New returns new app error that formats as the given text.
-func New(message string, code int) *AppError {
-	return PopStack(newAppError(errors.New(message), code))
-}
-
-func Wrap(cause error, code int) *AppError {
-	causeStackTracer := new(StackTracer)
-	if errors.As(cause, causeStackTracer) {
-		// If our cause has set a stack trace, and that trace is a child of our own function
-		// as inferred by prefix matching our current program counter stack, then we only want
-		// to decorate the error message rather than add a redundant stack trace.
-		if ancestorOfCause(callers(1), (*causeStackTracer).StackTrace()) {
-			return newAppError(cause, code)
-		}
+func New(message interface{}, code int) error {
+	e := &AppError{
+		code: code,
+	}
+	switch message := message.(type) {
+	case error:
+		e.error = message
+		e.message = message.Error()
+	default:
+		e.message = fmt.Sprintf("%v", message)
 	}
 
-	return PopStack(newAppError(cause, code))
+	return errors.Wrap(e, 1)
 }
 
-func newAppError(err error, code int) *AppError {
+func Wrap(err error, code int) error {
 	if err == nil {
-		err = ErrInternal
+		return nil
 	}
-
-	return &AppError{
-		err:   err,
-		trace: debug.Stack(),
-		code:  code,
-	}
-}
-
-// Error returns the string representation of the error message.
-func (e *AppError) Error() string {
-	return e.err.Error()
-}
-
-func (e *AppError) Unwrap() error {
-	return e.err
+	return errors.Wrap(&AppError{
+		error:   err,
+		message: err.Error(),
+		code:    code,
+	}, 1)
 }
 
 func (e *AppError) Code() int {
 	return e.code
 }
 
-func (e *AppError) Extend(err error) *AppError {
-	return &AppError{
-		err:   errors.Join(e.err, err),
-		trace: e.trace,
-		code:  e.code,
+func (e *AppError) Error() string {
+	if e.error == nil {
+		return fmt.Sprintf("code: %d, message: %s", e.code, e.message)
+	} else {
+		return fmt.Sprintf("code: %d, message: %s, error: %s", e.code, e.message, e.error.Error())
 	}
+}
+
+func (e *AppError) Unwrap() error {
+	return e.error
 }

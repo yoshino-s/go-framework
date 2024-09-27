@@ -92,7 +92,7 @@ func (h *OIDCAuthentication) Register(config MiddlewareConfig) (RegisterFunc, er
 			redirect := c.QueryParam("redirect")
 			state, err := randString(16)
 			if err != nil {
-				return errors.New("internal server error", http.StatusInternalServerError)
+				return errors.New("failed to generate state", http.StatusInternalServerError)
 			}
 			c.SetCookie(&http.Cookie{
 				Name:  "state",
