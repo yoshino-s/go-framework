@@ -35,13 +35,11 @@ func isInTest() bool {
 type logConfig struct {
 	Level string `mapstructure:"level"`
 	File  string `mapstructure:"file"`
-	Debug bool   `mapstructure:"debug"`
 }
 
 func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("log.level", "info", "log level")
 	flagSet.String("log.file", "", "log file path")
-	flagSet.Bool("log.debug", false, "log debug")
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(err)
 	}
@@ -61,7 +59,7 @@ func (l *logConfiguration) Read() {
 
 	var config zap.Config
 
-	if common.IsDev() || c.Debug {
+	if common.IsDev() {
 		config = zap.NewDevelopmentConfig()
 		config.EncoderConfig = log.NewColoredDevelopmentEncoderConfig()
 	} else {

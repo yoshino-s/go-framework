@@ -15,5 +15,5 @@ func PrintVersion() {
 }
 
 func IsDev() bool {
-	return Version == "dev"
+	return Version == "dev" || os.Getenv("DEV") == "true"
 }
