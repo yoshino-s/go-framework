@@ -22,11 +22,21 @@ func NewMissingComponentError(component string) *AppError {
 
 // New returns new app error that formats as the given text.
 func New(message string, code int) *AppError {
-	return newAppError(errors.New(message), code)
+	return PopStack(newAppError(errors.New(message), code))
 }
 
-func Wrap(err error, code int) *AppError {
-	return newAppError(err, code)
+func Wrap(cause error, code int) *AppError {
+	causeStackTracer := new(StackTracer)
+	if errors.As(cause, causeStackTracer) {
+		// If our cause has set a stack trace, and that trace is a child of our own function
+		// as inferred by prefix matching our current program counter stack, then we only want
+		// to decorate the error message rather than add a redundant stack trace.
+		if ancestorOfCause(callers(1), (*causeStackTracer).StackTrace()) {
+			return newAppError(cause, code)
+		}
+	}
+
+	return PopStack(newAppError(cause, code))
 }
 
 func newAppError(err error, code int) *AppError {
