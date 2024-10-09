@@ -122,7 +122,9 @@ func (h *Handler) Setup(ctx context.Context) {
 	}
 
 	if telemetry.IsSentryInitialized() {
-		h.Use(sentryecho.New(sentryecho.Options{}))
+		h.Use(sentryecho.New(sentryecho.Options{
+			Repanic: true,
+		}))
 	}
 
 	if h.config.Log {
