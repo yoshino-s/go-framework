@@ -25,7 +25,7 @@ var _ http.Handler = (*Handler)(nil)
 
 func New() *Handler {
 	h := &Handler{
-		EmptyApplication: application.NewEmptyApplication(),
+		EmptyApplication: application.NewEmptyApplication("grpc_handler"),
 	}
 
 	return h

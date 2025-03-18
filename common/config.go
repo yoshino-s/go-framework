@@ -50,6 +50,18 @@ func autoConvertHookFunc() mapstructure.DecodeHookFunc {
 					return data, err
 				}
 				return reflect.ValueOf(i).Convert(t).Interface(), nil
+			case reflect.Float32, reflect.Float64:
+				f, err := strconv.ParseFloat(data.(string), 64)
+				if err != nil {
+					return data, err
+				}
+				return reflect.ValueOf(f).Convert(t).Interface(), nil
+			case reflect.Bool:
+				b, err := strconv.ParseBool(data.(string))
+				if err != nil {
+					return data, err
+				}
+				return reflect.ValueOf(b).Convert(t).Interface(), nil
 			}
 		}
 		return data, nil

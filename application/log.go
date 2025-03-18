@@ -33,13 +33,15 @@ func isInTest() bool {
 }
 
 type logConfig struct {
-	Level string `mapstructure:"level"`
-	File  string `mapstructure:"file"`
+	Level  string `mapstructure:"level"`
+	File   string `mapstructure:"file"`
+	Format string `mapstructure:"format"`
 }
 
 func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("log.level", "info", "log level")
 	flagSet.String("log.file", "", "log file path")
+	flagSet.String("log.format", "", "log format, one of json, console, empty for default (console for dev, json for prod)")
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(err)
 	}
@@ -59,7 +61,7 @@ func (l *logConfiguration) Read() {
 
 	var config zap.Config
 
-	if common.IsDev() {
+	if c.Format == "console" || (c.Format == "" && common.IsDev()) {
 		config = zap.NewDevelopmentConfig()
 		config.EncoderConfig = log.NewColoredDevelopmentEncoderConfig()
 	} else {

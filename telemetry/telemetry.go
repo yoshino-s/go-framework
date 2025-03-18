@@ -14,7 +14,7 @@ type Telemetry struct {
 
 func New() *Telemetry {
 	return &Telemetry{
-		EmptyApplication: application.NewEmptyApplication(),
+		EmptyApplication: application.NewEmptyApplication("telemetry"),
 	}
 }
 

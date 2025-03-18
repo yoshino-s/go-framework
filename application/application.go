@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/yoshino-s/go-framework/configuration"
+	"github.com/yoshino-s/go-framework/log"
 	"go.uber.org/zap"
 )
 
@@ -19,11 +20,13 @@ var _ Application = &MainApplication{}
 
 type EmptyApplication struct {
 	Logger *zap.Logger
+	Name   string
 }
 
-func NewEmptyApplication() *EmptyApplication {
+func NewEmptyApplication(name string) *EmptyApplication {
 	return &EmptyApplication{
 		Logger: zap.NewNop(),
+		Name:   name,
 	}
 }
 
@@ -31,7 +34,9 @@ func (a *EmptyApplication) Configuration() configuration.Configuration { return 
 func (a *EmptyApplication) Setup(context.Context)                      {}
 func (a *EmptyApplication) Run(context.Context)                        {}
 func (a *EmptyApplication) Close(context.Context)                      {}
-func (a *EmptyApplication) SetLogger(l *zap.Logger)                    { a.Logger = l }
+func (a *EmptyApplication) SetLogger(l *zap.Logger) {
+	a.Logger = log.SetLoggerName(l, a.Name)
+}
 
 type FuncApplication func(context.Context)
 

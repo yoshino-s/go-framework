@@ -15,7 +15,7 @@ type DemoApp struct {
 
 func New() *DemoApp {
 	return &DemoApp{
-		application.NewEmptyApplication(),
+		application.NewEmptyApplication("demo"),
 	}
 }
 

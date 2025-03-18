@@ -16,9 +16,9 @@ type SubApplication struct {
 	sub []Application
 }
 
-func NewSubApplication() *SubApplication {
+func NewSubApplication(name string) *SubApplication {
 	return &SubApplication{
-		EmptyApplication: NewEmptyApplication(),
+		EmptyApplication: NewEmptyApplication(name),
 		sub:              make([]Application, 0),
 	}
 }
@@ -32,7 +32,7 @@ func (a *SubApplication) Configuration() configuration.Configuration {
 }
 
 func (a *SubApplication) SetLogger(l *zap.Logger) {
-	a.Logger = l
+	a.EmptyApplication.SetLogger(l)
 	for _, sa := range a.sub {
 		sa.SetLogger(l)
 	}

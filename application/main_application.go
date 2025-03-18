@@ -19,7 +19,7 @@ type MainApplication struct {
 
 func NewMainApplication() *MainApplication {
 	return &MainApplication{
-		SubApplication: NewSubApplication(),
+		SubApplication: NewSubApplication("main"),
 	}
 }
 
@@ -39,6 +39,8 @@ func (a *MainApplication) Setup(ctx context.Context) {
 }
 
 func (a *MainApplication) Go(ctx context.Context) {
+	a.SetLogger(a.Logger)
+
 	a.Logger.Debug("Setup MainApplication")
 	a.Setup(ctx)
 	a.Logger.Debug("Run MainApplication")

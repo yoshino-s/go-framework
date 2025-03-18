@@ -26,3 +26,16 @@ func GetUnexported(
 	value = reflect.NewAt(value.Type(), unsafe.Pointer(value.UnsafeAddr()))
 	return value.Interface(), true
 }
+
+func SetUnexported(
+	v any,
+	fieldName string,
+	value any,
+) bool {
+	uv, ok := GetUnexported(v, fieldName)
+	if !ok {
+		return false
+	}
+	reflect.ValueOf(uv).Elem().Set(reflect.ValueOf(value))
+	return true
+}
