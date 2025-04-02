@@ -18,7 +18,7 @@ type Application interface {
 	SetLogger(*zap.Logger)
 }
 
-var _ Application = &MainApplication{}
+var _ Application = &EmptyApplication{}
 
 type EmptyApplication struct {
 	Logger *zap.Logger
@@ -42,10 +42,14 @@ func (a *EmptyApplication) SetLogger(l *zap.Logger) {
 	a.Logger = log.SetLoggerName(l, a.Name)
 }
 
+var _ Application = FuncApplication(nil)
+
 type FuncApplication func(context.Context)
 
 func (f FuncApplication) Configuration() configuration.Configuration { return nil }
 func (f FuncApplication) SetLogger(l *zap.Logger)                    {}
+func (f FuncApplication) BeforeSetup(ctx context.Context)            {}
 func (f FuncApplication) Setup(ctx context.Context)                  {}
+func (f FuncApplication) AfterSetup(ctx context.Context)             {}
 func (f FuncApplication) Run(ctx context.Context)                    { f(ctx) }
 func (f FuncApplication) Close(ctx context.Context)                  {}
