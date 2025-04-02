@@ -39,9 +39,9 @@ func (a *MainApplication) Setup(ctx context.Context) {
 }
 
 func (a *MainApplication) Go(ctx context.Context) {
-	a.Logger.Debug("Setup MainApplication")
+	a.BeforeSetup(ctx)
 	a.Setup(ctx)
-	a.Logger.Debug("Run MainApplication")
+	a.AfterSetup(ctx)
 
 	ctx, cancel := context.WithCancel(ctx)
 

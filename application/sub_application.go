@@ -38,11 +38,31 @@ func (a *SubApplication) SetLogger(l *zap.Logger) {
 	}
 }
 
+func (a *SubApplication) BeforeSetup(ctx context.Context) {
+	a.Logger.Debug("before setup sub application", zap.String("application", fmt.Sprintf("%T", *a)))
+	iter.ForEach(a.sub, func(sa *Application) {
+		if *sa != nil {
+			a.Logger.Debug("before setup sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
+			(*sa).BeforeSetup(ctx)
+		}
+	})
+}
+
 func (a *SubApplication) Setup(ctx context.Context) {
 	a.SetLogger(a.Logger)
 	iter.ForEach(a.sub, func(sa *Application) {
 		a.Logger.Debug("setup sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
 		(*sa).Setup(ctx)
+	})
+}
+
+func (a *SubApplication) AfterSetup(ctx context.Context) {
+	a.Logger.Debug("after setup sub application", zap.String("application", fmt.Sprintf("%T", *a)))
+	iter.ForEach(a.sub, func(sa *Application) {
+		if *sa != nil {
+			a.Logger.Debug("after setup sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
+			(*sa).AfterSetup(ctx)
+		}
 	})
 }
 

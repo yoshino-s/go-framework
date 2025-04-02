@@ -10,7 +10,9 @@ import (
 
 type Application interface {
 	Configuration() configuration.Configuration
+	BeforeSetup(context.Context)
 	Setup(context.Context)
+	AfterSetup(context.Context)
 	Run(context.Context)
 	Close(context.Context)
 	SetLogger(*zap.Logger)
@@ -31,7 +33,9 @@ func NewEmptyApplication(name string) *EmptyApplication {
 }
 
 func (a *EmptyApplication) Configuration() configuration.Configuration { return nil }
+func (a *EmptyApplication) BeforeSetup(context.Context)                {}
 func (a *EmptyApplication) Setup(context.Context)                      {}
+func (a *EmptyApplication) AfterSetup(context.Context)                 {}
 func (a *EmptyApplication) Run(context.Context)                        {}
 func (a *EmptyApplication) Close(context.Context)                      {}
 func (a *EmptyApplication) SetLogger(l *zap.Logger) {
