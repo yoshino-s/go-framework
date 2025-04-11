@@ -111,7 +111,7 @@ func (h *OIDCAuthentication) Register(config MiddlewareConfig) (RegisterFunc, er
 		app.GET(config.CallbackPath, func(c echo.Context) error {
 			state, err := c.Cookie("state")
 			if err != nil {
-				return errors.Wrap(err, http.StatusForbidden)
+				return errors.Wrap(err, "Error getting state cookie", http.StatusInternalServerError)
 			}
 			if state.Value != c.QueryParam("state") {
 				return errors.New("invalid state", http.StatusForbidden)
@@ -119,7 +119,7 @@ func (h *OIDCAuthentication) Register(config MiddlewareConfig) (RegisterFunc, er
 
 			oauth2Token, err := h.getOauth2Config(callbackURL).Exchange(c.Request().Context(), c.QueryParam("code"))
 			if err != nil {
-				return errors.Wrap(err, http.StatusInternalServerError)
+				return errors.Wrap(err, "failed to exchange token", http.StatusInternalServerError)
 			}
 
 			userInfo, err := h.provider.UserInfo(c.Request().Context(), oauth2.StaticTokenSource(oauth2Token))

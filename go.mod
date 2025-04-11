@@ -17,7 +17,6 @@ require (
 	github.com/labstack/gommon v0.4.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oauth2-proxy/mockoidc v0.0.0-20240214162133-caebfff84d25
-	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/sourcegraph/conc v0.3.0
 	github.com/spf13/cobra v1.9.1

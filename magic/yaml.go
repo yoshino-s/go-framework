@@ -5,7 +5,7 @@ import (
 	"github.com/goccy/go-yaml/ast"
 	"github.com/goccy/go-yaml/parser"
 	"github.com/goccy/go-yaml/token"
-	"github.com/pkg/errors"
+	"github.com/yoshino-s/go-framework/errors"
 )
 
 func MarshalYamlWithComments(
@@ -14,12 +14,12 @@ func MarshalYamlWithComments(
 ) (string, error) {
 	b, err := yaml.Marshal(v)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to marshal yaml")
+		return "", errors.Wrap(err, "failed to marshal yaml")
 	}
 
 	f, err := parser.ParseBytes(b, 0)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse yaml")
+		return "", errors.Wrap(err, "failed to parse yaml")
 	}
 
 	for path, comment := range comments {
