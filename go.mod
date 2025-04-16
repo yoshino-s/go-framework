@@ -26,6 +26,7 @@ require (
 	golang.org/x/net v0.37.0
 	golang.org/x/oauth2 v0.28.0
 	google.golang.org/grpc v1.71.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
