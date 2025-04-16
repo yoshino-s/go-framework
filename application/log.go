@@ -44,6 +44,10 @@ type logConfig struct {
 		MaxAge     int  `mapstructure:"max_age"`
 		MaxBackups int  `mapstructure:"max_backups"`
 	} `mapstructure:"rotate"`
+	Levels struct {
+		Console string `mapstructure:"console"`
+		File    string `mapstructure:"file"`
+	} `mapstructure:"levels"`
 }
 
 func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
@@ -54,6 +58,8 @@ func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.Int("log.rotate.max_size", 500, "max size of log file in MB")
 	flagSet.Int("log.rotate.max_age", 28, "max age of log file in days")
 	flagSet.Int("log.rotate.max_backups", 3, "max number of log file backups")
+	flagSet.String("log.levels.console", "", "log level for console, empty for same as log.level")
+	flagSet.String("log.levels.file", "", "log level for file, empty for same as log.level")
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(err)
 	}
@@ -88,14 +94,25 @@ func (l *logConfiguration) Read() {
 	if c.Format == "json" || (c.Format == "" && !common.IsDev()) {
 		consoleEncoder = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 	}
+
+	consoleLevel := level
+	if c.Levels.Console != "" {
+		consoleLevel = common.Must(zapcore.ParseLevel(c.Levels.Console))
+	}
+
 	cores = append(cores, zapcore.NewCore(
 		consoleEncoder,
 		zapcore.Lock(os.Stdout),
-		level,
+		consoleLevel,
 	))
 
 	// build file core
 	if c.File != "" {
+		fileLevel := level
+		if c.Levels.File != "" {
+			fileLevel = common.Must(zapcore.ParseLevel(c.Levels.File))
+		}
+
 		var sink zapcore.WriteSyncer
 		if c.Rotate.Enable {
 			sink = zapcore.AddSync(&lumberjack.Logger{
@@ -105,15 +122,12 @@ func (l *logConfiguration) Read() {
 				MaxAge:     c.Rotate.MaxAge,
 			})
 		} else {
-			sink, _, err = zap.Open(c.File)
-			if err != nil {
-				panic(err)
-			}
+			sink, _ = common.Must2(zap.Open(c.File))
 		}
 		fileCore := zapcore.NewCore(
 			zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
 			sink,
-			level,
+			fileLevel,
 		)
 		cores = append(cores, fileCore)
 	}
