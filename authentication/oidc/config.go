@@ -4,8 +4,8 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
+	"github.com/yoshino-s/go-framework/utils"
 )
 
 type providerConfig struct {
@@ -40,10 +40,10 @@ func (c *config) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("oauth2.provider_config.user_info_url", "", "oauth2 provider user info url")
 	flagSet.String("oauth2.provider_config.jwks_url", "", "oauth2 provider jwks url")
 	flagSet.StringSlice("oauth2.provider_config.algorithms", nil, "oauth2 provider algorithms")
-	common.MustNoError(viper.BindPFlags(flagSet))
+	utils.MustNoError(viper.BindPFlags(flagSet))
 	configuration.Register(c)
 }
 
 func (c *config) Read() {
-	common.MustDecodeFromMapstructure(viper.AllSettings()["oauth2"], c)
+	utils.MustDecodeFromMapstructure(viper.AllSettings()["oauth2"], c)
 }

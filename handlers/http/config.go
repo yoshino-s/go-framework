@@ -3,8 +3,8 @@ package http
 import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
+	"github.com/yoshino-s/go-framework/utils"
 )
 
 type Feature uint16
@@ -47,10 +47,10 @@ func (c *config) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("http.addr", ":8080", "http listen address")
 	flagSet.Uint16("http.feature", uint16(FeatureAll), "http feature")
 	flagSet.Bool("http.behind_proxy", false, "http behind proxy")
-	common.MustNoError(viper.BindPFlags(flagSet))
+	utils.MustNoError(viper.BindPFlags(flagSet))
 	configuration.Register(c)
 }
 
 func (c *config) Read() {
-	common.MustDecodeFromMapstructure(viper.AllSettings()["http"], c)
+	utils.MustDecodeFromMapstructure(viper.AllSettings()["http"], c)
 }

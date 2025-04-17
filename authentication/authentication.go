@@ -1,24 +1,45 @@
 package authentication
 
-import "github.com/labstack/echo/v4"
+import (
+	"slices"
+
+	"github.com/labstack/echo/v4"
+)
 
 type Authentication struct {
-	validate func(string) (bool, error)
+	validator Validator
+	fetcher   Fetcher
+
+	ignorePaths []string
 }
 
-func New(validate func(string) (bool, error)) *Authentication {
-	return &Authentication{validate: validate}
+func New(validate Validator, fetcher Fetcher, options ...Options) *Authentication {
+	auth := &Authentication{
+		validator:   validate,
+		fetcher:     fetcher,
+		ignorePaths: []string{},
+	}
+
+	for _, option := range options {
+		option(auth)
+	}
+
+	return auth
 }
 
-func (auth *Authentication) Middleware(fetcher func(c echo.Context) (string, error)) echo.MiddlewareFunc {
+func (auth *Authentication) Middleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			token, err := fetcher(c)
+			if slices.Contains(auth.ignorePaths, c.Path()) {
+				return next(c)
+			}
+
+			token, err := auth.fetcher.Fetch(c)
 			if err != nil {
 				return err
 			}
 
-			if ok, err := auth.validate(token); err != nil {
+			if ok, err := auth.validator.Validate(c, token); err != nil {
 				return err
 			} else if !ok {
 				return echo.ErrUnauthorized

@@ -11,9 +11,9 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/labstack/echo/v4"
 	"github.com/yoshino-s/go-framework/application"
-	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/errors"
+	"github.com/yoshino-s/go-framework/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -33,7 +33,7 @@ func (h *OIDCAuthentication) Configuration() configuration.Configuration {
 
 func (h *OIDCAuthentication) Setup(ctx context.Context) {
 	if h.config.ProviderConfig.IssuerURL == "" {
-		provider := common.Must(oidc.NewProvider(context.TODO(), h.config.IssuerURL))
+		provider := utils.Must(oidc.NewProvider(context.TODO(), h.config.IssuerURL))
 		h.provider = provider
 	} else {
 		pc := &oidc.ProviderConfig{

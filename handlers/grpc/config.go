@@ -3,8 +3,8 @@ package grpc
 import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
+	"github.com/yoshino-s/go-framework/utils"
 )
 
 type config struct {
@@ -19,5 +19,5 @@ func (c *config) Register(flagSet *pflag.FlagSet) {
 }
 
 func (c *config) Read() {
-	common.MustDecodeFromMapstructure(viper.AllSettings()["grpc"], c)
+	utils.MustDecodeFromMapstructure(viper.AllSettings()["grpc"], c)
 }

@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/magic"
+	"github.com/yoshino-s/go-framework/utils"
 )
 
 var _ Configuration = &generateConfiguration{}
@@ -29,7 +29,7 @@ func (*generateConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.Bool("generate-config.enable", false, "generate config enable")
 	flagSet.String("generate-config.format", "yaml", "generate config format, one of json, yaml, env")
 	flagSet.String("generate-config.path", "", "generate config path")
-	common.MustNoError(viper.BindPFlags(flagSet))
+	utils.MustNoError(viper.BindPFlags(flagSet))
 	Register(GenerateConfiguration)
 }
 
@@ -113,27 +113,24 @@ func marshalEnv() ([]byte, error) {
 }
 
 func (c *generateConfiguration) Read() {
-	err := common.DecodeFromMapstructure(viper.AllSettings()["generate-config"], &c.Config)
-	if err != nil {
-		panic(err)
-	}
+	utils.MustDecodeFromMapstructure(viper.AllSettings()["generate-config"], &c.Config)
 
 	if c.Config.Enable {
 		viper.Set("generate-config", nil)
 		var content []byte
 
 		if c.Config.Format == "json" {
-			content = common.Must(json.MarshalIndent(viper.AllSettings(), "", "  "))
+			content = utils.Must(json.MarshalIndent(viper.AllSettings(), "", "  "))
 		} else if c.Config.Format == "yaml" {
-			content = []byte(common.Must(marshalYaml()))
+			content = []byte(utils.Must(marshalYaml()))
 		} else {
-			content = common.Must(marshalEnv())
+			content = utils.Must(marshalEnv())
 		}
 
 		if c.Config.Path == "" {
 			fmt.Print(string(content))
 		} else {
-			common.MustNoError(os.WriteFile(c.Config.Path, content, 0644))
+			utils.MustNoError(os.WriteFile(c.Config.Path, content, 0644))
 		}
 
 		os.Exit(0)

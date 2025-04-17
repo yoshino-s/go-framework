@@ -10,6 +10,7 @@ import (
 	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/log"
+	"github.com/yoshino-s/go-framework/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -68,10 +69,7 @@ func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
 
 func (l *logConfiguration) Read() {
 	var c logConfig
-	err := common.DecodeFromMapstructure(viper.AllSettings()["log"], &c)
-	if err != nil {
-		panic(err)
-	}
+	utils.MustDecodeFromMapstructure(viper.AllSettings()["log"], &c)
 
 	if isInTest() {
 		return
@@ -81,10 +79,7 @@ func (l *logConfiguration) Read() {
 
 	level := zapcore.WarnLevel
 	if c.Level != "" {
-		level, err = zapcore.ParseLevel(c.Level)
-		if err != nil {
-			panic(err)
-		}
+		level = utils.Must(zapcore.ParseLevel(c.Level))
 	}
 
 	cores := make([]zapcore.Core, 0)
@@ -97,7 +92,7 @@ func (l *logConfiguration) Read() {
 
 	consoleLevel := level
 	if c.Levels.Console != "" {
-		consoleLevel = common.Must(zapcore.ParseLevel(c.Levels.Console))
+		consoleLevel = utils.Must(zapcore.ParseLevel(c.Levels.Console))
 	}
 
 	cores = append(cores, zapcore.NewCore(
@@ -110,7 +105,7 @@ func (l *logConfiguration) Read() {
 	if c.File != "" {
 		fileLevel := level
 		if c.Levels.File != "" {
-			fileLevel = common.Must(zapcore.ParseLevel(c.Levels.File))
+			fileLevel = utils.Must(zapcore.ParseLevel(c.Levels.File))
 		}
 
 		var sink zapcore.WriteSyncer
@@ -122,7 +117,7 @@ func (l *logConfiguration) Read() {
 				MaxAge:     c.Rotate.MaxAge,
 			})
 		} else {
-			sink, _ = common.Must2(zap.Open(c.File))
+			sink, _ = utils.Must2(zap.Open(c.File))
 		}
 		fileCore := zapcore.NewCore(
 			zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),

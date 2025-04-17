@@ -6,11 +6,15 @@ import (
 )
 
 var (
-	Version string = "dev"
+	Version   string = "dev"
+	BuildTime string = "unknown"
+	Commit    string = "unknown"
 )
 
 func PrintVersion() {
 	fmt.Printf("version: %s\n", Version)
+	fmt.Printf("build time: %s\n", BuildTime)
+	fmt.Printf("commit: %s\n", Commit)
 	os.Exit(0)
 }
 

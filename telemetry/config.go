@@ -3,8 +3,8 @@ package telemetry
 import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
+	"github.com/yoshino-s/go-framework/utils"
 )
 
 var _ configuration.Configuration = (*telemetryConfiguration)(nil)
@@ -17,12 +17,12 @@ type telemetryConfiguration struct {
 func (t *telemetryConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("telemetry.sentry_dsn", "", "sentry dsn")
 	flagSet.Float64("telemetry.traces_sample_rate", 1.0, "traces sample rate")
-	common.MustNoError(viper.BindPFlags(flagSet))
+	utils.MustNoError(viper.BindPFlags(flagSet))
 	configuration.Register(t)
 }
 
 func (c *telemetryConfiguration) Read() {
-	common.MustNoError(common.DecodeFromMapstructure(viper.AllSettings()["telemetry"], c))
+	utils.MustDecodeFromMapstructure(viper.AllSettings()["telemetry"], c)
 
 	if c.SentryDSN != "" {
 		c.initSentry()
