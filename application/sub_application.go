@@ -49,7 +49,7 @@ func (a *SubApplication) BeforeSetup(ctx context.Context) {
 }
 
 func (a *SubApplication) Setup(ctx context.Context) {
-	a.SetLogger(a.Logger)
+	a.Logger.Debug("setup sub application", zap.String("application", fmt.Sprintf("%T", *a)))
 	iter.ForEach(a.sub, func(sa *Application) {
 		a.Logger.Debug("setup sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
 		(*sa).Setup(ctx)

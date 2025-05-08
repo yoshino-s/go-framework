@@ -39,6 +39,8 @@ func (a *MainApplication) Setup(ctx context.Context) {
 }
 
 func (a *MainApplication) Go(ctx context.Context) {
+	a.SetLogger(a.Logger)
+
 	a.BeforeSetup(ctx)
 	a.Setup(ctx)
 	a.AfterSetup(ctx)
