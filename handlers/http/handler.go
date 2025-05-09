@@ -7,7 +7,6 @@ import (
 	"strings"
 	"sync/atomic"
 
-	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/go-errors/errors"
 	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
@@ -17,7 +16,6 @@ import (
 	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
 	framework_errors "github.com/yoshino-s/go-framework/errors"
-	"github.com/yoshino-s/go-framework/telemetry"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 )
@@ -119,12 +117,6 @@ func (h *Handler) Setup(ctx context.Context) {
 				c.Logger().Error(err)
 			}
 		}
-	}
-
-	if telemetry.IsSentryInitialized() {
-		h.Use(sentryecho.New(sentryecho.Options{
-			Repanic: true,
-		}))
 	}
 
 	if h.config.Log {

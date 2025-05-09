@@ -7,8 +7,8 @@ import (
 
 var (
 	Version   string = "dev"
-	BuildTime string = "unknown"
-	Commit    string = "unknown"
+	BuildTime string = "<unset>"
+	Commit    string = "<unset>"
 )
 
 func PrintVersion() {
