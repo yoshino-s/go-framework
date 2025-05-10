@@ -42,14 +42,47 @@ func (a *EmptyApplication) SetLogger(l *zap.Logger) {
 	a.Logger = log.SetLoggerName(l, a.Name)
 }
 
-var _ Application = FuncApplication(nil)
+type ApplicationStage int
 
-type FuncApplication func(context.Context)
+const (
+	StageBeforeSetup ApplicationStage = iota
+	StageSetup
+	StageAfterSetup
+	StageRun
+	StageClose
+)
 
-func (f FuncApplication) Configuration() configuration.Configuration { return nil }
-func (f FuncApplication) SetLogger(l *zap.Logger)                    {}
-func (f FuncApplication) BeforeSetup(ctx context.Context)            {}
-func (f FuncApplication) Setup(ctx context.Context)                  {}
-func (f FuncApplication) AfterSetup(ctx context.Context)             {}
-func (f FuncApplication) Run(ctx context.Context)                    { f(ctx) }
-func (f FuncApplication) Close(ctx context.Context)                  {}
+var _ Application = &FuncApplication{}
+
+type FuncApplication struct {
+	stage ApplicationStage
+	f     func(context.Context)
+}
+
+func (f *FuncApplication) Configuration() configuration.Configuration { return nil }
+func (f *FuncApplication) SetLogger(l *zap.Logger)                    {}
+func (f *FuncApplication) BeforeSetup(ctx context.Context) {
+	if f.stage == StageBeforeSetup {
+		f.f(ctx)
+	}
+}
+func (f *FuncApplication) Setup(ctx context.Context) {
+	if f.stage == StageSetup {
+		f.f(ctx)
+	}
+}
+func (f *FuncApplication) AfterSetup(ctx context.Context) {
+	if f.stage == StageAfterSetup {
+		f.f(ctx)
+	}
+}
+func (f *FuncApplication) Run(ctx context.Context) {
+	if f.stage == StageRun {
+		f.f(ctx)
+	}
+}
+func (f *FuncApplication) Close(ctx context.Context) {
+	if f.stage == StageClose {
+		f.f(ctx)
+	}
+}
