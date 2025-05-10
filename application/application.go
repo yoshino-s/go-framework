@@ -52,36 +52,43 @@ const (
 	StageClose
 )
 
-var _ Application = &FuncApplication{}
+var _ Application = &funcApplication{}
 
-type FuncApplication struct {
+func NewFuncApplication(stage ApplicationStage, f func(context.Context)) *funcApplication {
+	return &funcApplication{
+		stage: stage,
+		f:     f,
+	}
+}
+
+type funcApplication struct {
 	stage ApplicationStage
 	f     func(context.Context)
 }
 
-func (f *FuncApplication) Configuration() configuration.Configuration { return nil }
-func (f *FuncApplication) SetLogger(l *zap.Logger)                    {}
-func (f *FuncApplication) BeforeSetup(ctx context.Context) {
+func (f *funcApplication) Configuration() configuration.Configuration { return nil }
+func (f *funcApplication) SetLogger(l *zap.Logger)                    {}
+func (f *funcApplication) BeforeSetup(ctx context.Context) {
 	if f.stage == StageBeforeSetup {
 		f.f(ctx)
 	}
 }
-func (f *FuncApplication) Setup(ctx context.Context) {
+func (f *funcApplication) Setup(ctx context.Context) {
 	if f.stage == StageSetup {
 		f.f(ctx)
 	}
 }
-func (f *FuncApplication) AfterSetup(ctx context.Context) {
+func (f *funcApplication) AfterSetup(ctx context.Context) {
 	if f.stage == StageAfterSetup {
 		f.f(ctx)
 	}
 }
-func (f *FuncApplication) Run(ctx context.Context) {
+func (f *funcApplication) Run(ctx context.Context) {
 	if f.stage == StageRun {
 		f.f(ctx)
 	}
 }
-func (f *FuncApplication) Close(ctx context.Context) {
+func (f *funcApplication) Close(ctx context.Context) {
 	if f.stage == StageClose {
 		f.f(ctx)
 	}
