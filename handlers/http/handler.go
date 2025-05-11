@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"sort"
-	"strings"
 	"sync/atomic"
 
 	"github.com/go-errors/errors"
@@ -12,10 +11,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/yoshino-s/go-framework/application"
-	"github.com/yoshino-s/go-framework/authentication/oidc"
 	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
 	framework_errors "github.com/yoshino-s/go-framework/errors"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 )
@@ -30,8 +30,6 @@ type Handler struct {
 
 	Ready  *atomic.Bool
 	Health *atomic.Bool
-
-	oidcAuthenticationRegisterFunc oidc.RegisterFunc
 }
 
 func New() *Handler {
@@ -44,20 +42,6 @@ func New() *Handler {
 	}
 
 	return h
-}
-
-func (h *Handler) SetOIDCAuthentication(auth *oidc.OIDCAuthentication, RedirectPath string, CallbackPath string, PostProcess oidc.PostProcessFunc) error {
-	oidcAuthenticationRegisterFunc, err := auth.Register(oidc.MiddlewareConfig{
-		ExternalURL:  h.config.ExternalURL,
-		RedirectPath: RedirectPath,
-		CallbackPath: CallbackPath,
-		PostProcess:  PostProcess,
-	})
-	if err != nil {
-		return err
-	}
-	h.oidcAuthenticationRegisterFunc = oidcAuthenticationRegisterFunc
-	return nil
 }
 
 func (h *Handler) Configuration() configuration.Configuration {
@@ -119,14 +103,39 @@ func (h *Handler) Setup(ctx context.Context) {
 		}
 	}
 
+	h.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if h.config.Feature.Has(FeatureVersion) && c.Request().URL.Path == "/-/version" {
+				return c.String(http.StatusOK, common.Version)
+			}
+
+			if h.config.Feature.Has(FeatureHealth) && c.Request().URL.Path == "/-/healthz" {
+				if h.Health.Load() {
+					return c.String(http.StatusOK, "OK")
+				} else {
+					return c.String(http.StatusServiceUnavailable, "NG")
+				}
+			}
+
+			if h.config.Feature.Has(FeatureReady) && c.Request().URL.Path == "/-/readyz" {
+				if h.Ready.Load() {
+					return c.String(http.StatusOK, "OK")
+				}
+				return c.String(http.StatusServiceUnavailable, "NG")
+			}
+
+			if h.config.Feature.Has(FeatureMetrics) && c.Request().URL.Path == "/-/metrics" {
+				echoprometheus.NewHandler()(c)
+			}
+			return next(c)
+		}
+	})
+
 	if h.config.Log {
 		h.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 			LogURI:    true,
 			LogStatus: true,
 			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-				if strings.HasPrefix(v.URI, "/-/") {
-					return nil
-				}
 				h.EmptyApplication.Logger.Info("request",
 					zap.String("URI", v.URI),
 					zap.Int("status", v.Status),
@@ -136,38 +145,17 @@ func (h *Handler) Setup(ctx context.Context) {
 		}))
 	}
 
-	if h.config.Feature.Has(FeatureVersion) {
-		h.GET("/-/version", func(c echo.Context) error {
-			return c.String(http.StatusOK, common.Version)
-		})
-	}
+	h.Echo.Use(otelecho.Middleware(common.AppName))
 
-	if h.config.Feature.Has(FeatureHealth) {
-		h.GET("/-/healthz", func(c echo.Context) error {
-			if h.Health.Load() {
-				return c.String(http.StatusOK, "OK")
-			} else {
-				return c.String(http.StatusServiceUnavailable, "NG")
+	h.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			traceID := trace.SpanFromContext(c.Request().Context()).SpanContext().TraceID()
+			if traceID.IsValid() {
+				c.Response().Header().Set("X-Trace-ID", traceID.String())
 			}
-		})
-	}
-
-	if h.config.Feature.Has(FeatureReady) {
-		h.GET("/-/readyz", func(c echo.Context) error {
-			if h.Ready.Load() {
-				return c.String(http.StatusOK, "OK")
-			}
-			return c.String(http.StatusServiceUnavailable, "NG")
-		})
-	}
-
-	if h.config.Feature.Has(FeatureMetrics) {
-		h.GET("/-/metrics", echoprometheus.NewHandler())
-	}
-
-	if h.oidcAuthenticationRegisterFunc != nil {
-		h.oidcAuthenticationRegisterFunc(h.Echo)
-	}
+			return next(c)
+		}
+	})
 }
 
 func (h *Handler) Run(context.Context) {

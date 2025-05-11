@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/conc/iter"
 	"github.com/yoshino-s/go-framework/configuration"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
 
@@ -39,6 +40,10 @@ func (a *SubApplication) SetLogger(l *zap.Logger) {
 }
 
 func (a *SubApplication) BeforeSetup(ctx context.Context) {
+	tracer := otel.GetTracerProvider().Tracer(ScopeName)
+	ctx, span := tracer.Start(ctx, a.spanName(StageBeforeSetup))
+	defer span.End()
+
 	a.Logger.Debug("before setup sub application", zap.String("application", fmt.Sprintf("%T", *a)))
 	iter.ForEach(a.sub, func(sa *Application) {
 		if *sa != nil {
@@ -49,6 +54,10 @@ func (a *SubApplication) BeforeSetup(ctx context.Context) {
 }
 
 func (a *SubApplication) Setup(ctx context.Context) {
+	tracer := otel.GetTracerProvider().Tracer(ScopeName)
+	ctx, span := tracer.Start(ctx, a.spanName(StageSetup))
+	defer span.End()
+
 	a.Logger.Debug("setup sub application", zap.String("application", fmt.Sprintf("%T", *a)))
 	iter.ForEach(a.sub, func(sa *Application) {
 		a.Logger.Debug("setup sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
@@ -57,6 +66,10 @@ func (a *SubApplication) Setup(ctx context.Context) {
 }
 
 func (a *SubApplication) AfterSetup(ctx context.Context) {
+	tracer := otel.GetTracerProvider().Tracer(ScopeName)
+	ctx, span := tracer.Start(ctx, a.spanName(StageAfterSetup))
+	defer span.End()
+
 	a.Logger.Debug("after setup sub application", zap.String("application", fmt.Sprintf("%T", *a)))
 	iter.ForEach(a.sub, func(sa *Application) {
 		if *sa != nil {
@@ -67,6 +80,10 @@ func (a *SubApplication) AfterSetup(ctx context.Context) {
 }
 
 func (a *SubApplication) Run(ctx context.Context) {
+	tracer := otel.GetTracerProvider().Tracer(ScopeName)
+	ctx, span := tracer.Start(ctx, a.spanName(StageRun))
+	defer span.End()
+
 	iter.ForEach(a.sub, func(sa *Application) {
 		if *sa != nil {
 			a.Logger.Debug("run sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
@@ -76,6 +93,10 @@ func (a *SubApplication) Run(ctx context.Context) {
 }
 
 func (a *SubApplication) Close(ctx context.Context) {
+	tracer := otel.GetTracerProvider().Tracer(ScopeName)
+	ctx, span := tracer.Start(ctx, a.spanName(StageClose))
+	defer span.End()
+
 	iter.ForEach(a.sub, func(sa *Application) {
 		a.Logger.Debug("close sub application", zap.String("application", fmt.Sprintf("%T", *sa)))
 		(*sa).Close(ctx)

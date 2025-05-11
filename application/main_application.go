@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/yoshino-s/go-framework/configuration"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
 
@@ -19,7 +20,7 @@ type MainApplication struct {
 
 func NewMainApplication() *MainApplication {
 	return &MainApplication{
-		SubApplication: NewSubApplication("main"),
+		SubApplication: NewSubApplication("MainApplication"),
 	}
 }
 
@@ -39,6 +40,10 @@ func (a *MainApplication) Setup(ctx context.Context) {
 }
 
 func (a *MainApplication) Go(ctx context.Context) {
+	tracer := otel.GetTracerProvider().Tracer(ScopeName)
+	ctx, span := tracer.Start(ctx, "MainApplication.Go")
+	defer span.End()
+
 	a.SetLogger(a.Logger)
 
 	a.BeforeSetup(ctx)
