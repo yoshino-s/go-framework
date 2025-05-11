@@ -41,10 +41,13 @@ jobs:
               type=ref,event=tag,enable=true,priority=600
               type=ref,event=pr,prefix=pr-,enable=true,priority=600
               type=sha,enable=true
+          sep-tags: ","
+          sep-labels: ","
+          sep-annotations: ","
       - name: Run Ko
         run: |
           set -euf -o pipefail
-          echo "DIGESTS=$(ko build ./demo --bare --sbom spdx --tags ${{ steps.meta.outputs.tags }})" >> $GITHUB_ENV
+          echo "DIGESTS=$(ko build ./demo --bare --sbom spdx --tags ${{ steps.meta.outputs.tags }} --image-annotation ${{ steps.meta.outputs.annotations }} --image-label ${{ steps.meta.outputs.labels }})" >> $GITHUB_ENV
       - name: Cosign
         run: |
           COSIGN_EXPERIMENTAL=true cosign sign --yes $DIGESTS
