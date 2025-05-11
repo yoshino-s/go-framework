@@ -36,11 +36,14 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           tags: |
-              type=schedule,pattern=nightly,enable=true,priority=1000
-              type=ref,event=branch,enable=true,priority=600
-              type=ref,event=tag,enable=true,priority=600
-              type=ref,event=pr,prefix=pr-,enable=true,priority=600
-              type=sha,enable=true
+            type=schedule,pattern=nightly,enable=true,priority=1000
+            type=ref,event=branch,enable=true,priority=600
+            type=ref,event=tag,enable=true,priority=600
+            type=ref,event=pr,prefix=pr-,enable=true,priority=600
+            type=sha,enable=true
+          labels: |
+            org.opencontainers.image.title=go-framework demo
+            org.opencontainers.image.description=A demo application for go-framework
           sep-tags: ","
           sep-labels: ","
           sep-annotations: ","
