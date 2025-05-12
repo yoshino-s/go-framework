@@ -47,10 +47,18 @@ jobs:
           sep-tags: ","
           sep-labels: ","
           sep-annotations: ","
+      - name: Setup variables
+        run: |
+          set -euf -o pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${VERSION:-${GITHUB_REF_NAME}}"
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
       - name: Run Ko
         run: |
           set -euf -o pipefail
-          echo "DIGESTS=$(ko build ./demo --bare --sbom spdx --tags ${{ steps.meta.outputs.tags }} --image-annotation ${{ steps.meta.outputs.annotations }} --image-label ${{ steps.meta.outputs.labels }})" >> $GITHUB_ENV
+          DIGESTS="$(ko build ./demo --bare --sbom spdx --tags ${{ steps.meta.outputs.tags }} --image-annotation ${{ steps.meta.outputs.annotations }} --image-label ${{ steps.meta.outputs.labels }})"
+          echo "DIGESTS=$DIGESTS" >> $GITHUB_ENV
       - name: Cosign
         run: |
           COSIGN_EXPERIMENTAL=true cosign sign --yes $DIGESTS
