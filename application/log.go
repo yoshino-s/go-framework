@@ -50,6 +50,7 @@ type logConfig struct {
 		Console string `mapstructure:"console"`
 		File    string `mapstructure:"file"`
 	} `mapstructure:"levels"`
+	Otel bool `mapstructure:"otel"`
 }
 
 func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
@@ -62,6 +63,7 @@ func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.Int("log.rotate.max_backups", 3, "max number of log file backups")
 	flagSet.String("log.levels.console", "", "log level for console, empty for same as log.level")
 	flagSet.String("log.levels.file", "", "log level for file, empty for same as log.level")
+	flagSet.Bool("log.otel", false, "enable sending logs to otel collector")
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(err)
 	}
@@ -127,9 +129,12 @@ func (l *logConfiguration) Read() {
 		)
 		cores = append(cores, fileCore)
 	}
-	cores = append(cores,
-		otelzap.NewCore(ScopeName),
-	)
+
+	if c.Otel {
+		cores = append(cores,
+			otelzap.NewCore(ScopeName),
+		)
+	}
 
 	logger := zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddStacktrace(zapcore.WarnLevel))
 
