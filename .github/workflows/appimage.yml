@@ -59,7 +59,7 @@ jobs:
       - name: Run Ko
         run: |
           set -eufx -o pipefail
-          DIGESTS="$(ko build ./demo --bare --sbom spdx --tags ${{ steps.meta.outputs.tags }} --image-annotation ${{ steps.meta.outputs.annotations }} --image-label ${{ steps.meta.outputs.labels }})"
+          DIGESTS="$(ko build ./demo --bare --sbom spdx --tags '${{ steps.meta.outputs.tags }}' --image-annotation '${{ steps.meta.outputs.annotations }}' --image-label '${{ steps.meta.outputs.labels }}')"
           echo "DIGESTS=$DIGESTS" >> $GITHUB_ENV
       - name: Cosign
         run: |
