@@ -11,6 +11,7 @@ import (
 	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/log"
 	"github.com/yoshino-s/go-framework/utils"
+	"go.opentelemetry.io/contrib/bridges/otelzap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -126,6 +127,9 @@ func (l *logConfiguration) Read() {
 		)
 		cores = append(cores, fileCore)
 	}
+	cores = append(cores,
+		otelzap.NewCore(ScopeName),
+	)
 
 	logger := zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddStacktrace(zapcore.WarnLevel))
 

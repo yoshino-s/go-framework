@@ -34,7 +34,7 @@ type Handler struct {
 
 func New() *Handler {
 	h := &Handler{
-		EmptyApplication: application.NewEmptyApplication("http_handler"),
+		EmptyApplication: application.NewEmptyApplication("HTTPHandler"),
 		Echo:             echo.New(),
 		config:           config{},
 		Ready:            &atomic.Bool{},
