@@ -52,6 +52,8 @@ jobs:
           set -efx -o pipefail
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             VERSION="${VERSION:-${GITHUB_REF_NAME}}"
+          else
+            VERSION="${VERSION:-snapshot}"
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
       - name: Run Ko
