@@ -3,7 +3,7 @@ package log
 import (
 	"context"
 
-	"github.com/yoshino-s/go-framework/errors"
+	"github.com/go-errors/errors"
 	"go.uber.org/zap"
 )
 
@@ -38,7 +38,7 @@ func FromContextOr(ctx context.Context, fallback *zap.Logger) *zap.Logger {
 func FromContextX(ctx context.Context) *zap.Logger {
 	logger, ok := ctx.Value(loggerKey{}).(*zap.Logger)
 	if !ok {
-		errors.NewMissingComponentError("logger")
+		panic(errors.Errorf("logger not found in context"))
 	}
 	return logger
 }

@@ -1,4 +1,4 @@
-package application
+package log
 
 import (
 	"os"
@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
-	"github.com/yoshino-s/go-framework/log"
 	"github.com/yoshino-s/go-framework/utils"
 	"go.opentelemetry.io/contrib/bridges/otelzap"
 	"go.uber.org/zap"
@@ -17,10 +16,14 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var _ configuration.Configuration = (*logConfiguration)(nil)
+const (
+	ScopeName = "github.com/yoshino-s/go-framework/log"
+)
 
-type logConfiguration struct {
-	logger **zap.Logger
+var _ configuration.Configuration = (*LogConfiguration)(nil)
+
+type LogConfiguration struct {
+	Logger **zap.Logger
 }
 
 func isInTest() bool {
@@ -53,7 +56,7 @@ type logConfig struct {
 	Otel bool `mapstructure:"otel"`
 }
 
-func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
+func (l *LogConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("log.level", "info", "log level")
 	flagSet.String("log.file", "", "log file path")
 	flagSet.String("log.format", "", "log format, one of json, console, empty for default (console for dev, json for prod)")
@@ -70,7 +73,7 @@ func (l *logConfiguration) Register(flagSet *pflag.FlagSet) {
 	configuration.Register(l)
 }
 
-func (l *logConfiguration) Read() {
+func (l *LogConfiguration) Read() {
 	var c logConfig
 	utils.MustDecodeFromMapstructure(viper.AllSettings()["log"], &c)
 
@@ -88,7 +91,7 @@ func (l *logConfiguration) Read() {
 	cores := make([]zapcore.Core, 0)
 
 	// build console core
-	consoleEncoder := zapcore.NewConsoleEncoder(log.NewColoredDevelopmentEncoderConfig())
+	consoleEncoder := zapcore.NewConsoleEncoder(NewColoredDevelopmentEncoderConfig())
 	if c.Format == "json" || (c.Format == "" && !common.IsDev()) {
 		consoleEncoder = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 	}
@@ -138,5 +141,5 @@ func (l *logConfiguration) Read() {
 
 	logger := zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddStacktrace(zapcore.WarnLevel))
 
-	(*l.logger) = logger
+	(*l.Logger) = logger
 }

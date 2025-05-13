@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-errors/errors"
+
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -76,11 +78,11 @@ func DecodeFromMapstructure(input interface{}, result interface{}) error {
 		Result: result,
 	})
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	if err = decoder.Decode(input); err != nil {
-		return err
+		return errors.New(err)
 	}
 	return err
 }

@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/yoshino-s/go-framework/configuration"
+	"github.com/yoshino-s/go-framework/log"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
@@ -26,8 +27,8 @@ func NewMainApplication() *MainApplication {
 
 func (a *MainApplication) Configuration() configuration.Configuration {
 	return &configuration.CombinationConfiguration{
-		&logConfiguration{
-			logger: &a.Logger,
+		&log.LogConfiguration{
+			Logger: &a.Logger,
 		},
 	}
 }

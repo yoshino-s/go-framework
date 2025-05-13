@@ -13,7 +13,6 @@ import (
 	"github.com/yoshino-s/go-framework/application"
 	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
-	framework_errors "github.com/yoshino-s/go-framework/errors"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -75,16 +74,12 @@ func (h *Handler) Setup(ctx context.Context) {
 		code := http.StatusInternalServerError
 		var message interface{}
 		httpError := &echo.HTTPError{}
-		appError := &framework_errors.AppError{}
 		if errors.As(err, &httpError) {
 			code = httpError.Code
 			message = httpError.Message
 			if message == nil {
 				message = http.StatusText(code)
 			}
-		} else if errors.As(err, &appError) {
-			code = appError.Code()
-			message = appError.Error()
 		} else {
 			message = err.Error()
 		}
