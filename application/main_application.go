@@ -8,7 +8,6 @@ import (
 
 	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/log"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
 
@@ -41,10 +40,6 @@ func (a *MainApplication) Setup(ctx context.Context) {
 }
 
 func (a *MainApplication) Go(ctx context.Context) {
-	tracer := otel.GetTracerProvider().Tracer(ScopeName)
-	ctx, span := tracer.Start(ctx, "MainApplication.Go")
-	defer span.End()
-
 	a.SetLogger(a.Logger)
 
 	a.BeforeSetup(ctx)

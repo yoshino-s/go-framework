@@ -8,9 +8,8 @@ import (
 	"github.com/yoshino-s/go-framework/configuration"
 )
 
-var App = application.NewMainApplication()
-
 var (
+	App     = application.NewMainApplication()
 	rootCmd *cobra.Command
 )
 
