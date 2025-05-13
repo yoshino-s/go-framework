@@ -140,17 +140,21 @@ func (h *Handler) Setup(ctx context.Context) {
 		}))
 	}
 
-	h.Echo.Use(otelecho.Middleware(common.AppName))
+	if h.config.Otel {
+		h.Echo.Use(otelecho.Middleware("http"))
+	}
 
-	h.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			traceID := trace.SpanFromContext(c.Request().Context()).SpanContext().TraceID()
-			if traceID.IsValid() {
-				c.Response().Header().Set("X-Trace-ID", traceID.String())
+	if h.config.ResponseTraceId {
+		h.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				traceID := trace.SpanFromContext(c.Request().Context()).SpanContext().TraceID()
+				if traceID.IsValid() {
+					c.Response().Header().Set("X-Trace-ID", traceID.String())
+				}
+				return next(c)
 			}
-			return next(c)
-		}
-	})
+		})
+	}
 }
 
 func (h *Handler) Run(context.Context) {

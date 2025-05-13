@@ -37,6 +37,9 @@ type config struct {
 	ListenAddr  string  `mapstructure:"addr"`
 	BehindProxy bool    `mapstructure:"behind_proxy"`
 	ExternalURL string  `mapstructure:"external_url"`
+
+	Otel            bool `mapstructure:"otel"`
+	ResponseTraceId bool `mapstructure:"response_trace_id"`
 }
 
 var _ configuration.Configuration = (*config)(nil)
@@ -47,6 +50,8 @@ func (c *config) Register(flagSet *pflag.FlagSet) {
 	flagSet.String("http.addr", ":8080", "http listen address")
 	flagSet.Uint16("http.feature", uint16(FeatureAll), "http feature")
 	flagSet.Bool("http.behind_proxy", false, "http behind proxy")
+	flagSet.Bool("http.otel", false, "enable opentelemetry")
+	flagSet.Bool("http.response_trace_id", false, "enable x-trace-id in response header")
 	utils.MustNoError(viper.BindPFlags(flagSet))
 	configuration.Register(c)
 }
