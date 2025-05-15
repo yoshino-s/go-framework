@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sort"
 	"sync/atomic"
@@ -131,8 +132,9 @@ func (h *Handler) Setup(ctx context.Context) {
 			LogURI:    true,
 			LogStatus: true,
 			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-				h.EmptyApplication.Logger.Info("request",
+				h.EmptyApplication.Logger.Info(fmt.Sprintf("[%d] %s %s ", v.Status, v.Method, v.URI),
 					zap.String("URI", v.URI),
+					zap.String("method", v.Method),
 					zap.Int("status", v.Status),
 				)
 				return nil

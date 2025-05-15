@@ -5,9 +5,11 @@ go 1.23.0
 toolchain go1.23.4
 
 require (
+	entgo.io/ent v0.14.4
 	github.com/fatih/color v1.18.0
 	github.com/go-errors/errors v1.5.1
 	github.com/goccy/go-yaml v1.16.0
+	github.com/google/uuid v1.6.0
 	github.com/labstack/echo-contrib v0.17.2
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/labstack/gommon v0.4.2
