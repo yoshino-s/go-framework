@@ -131,6 +131,7 @@ func (h *Handler) Setup(ctx context.Context) {
 		h.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 			LogURI:    true,
 			LogStatus: true,
+			LogMethod: true,
 			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 				h.EmptyApplication.Logger.Info(fmt.Sprintf("[%d] %s %s ", v.Status, v.Method, v.URI),
 					zap.String("URI", v.URI),
