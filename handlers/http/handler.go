@@ -188,11 +188,13 @@ func (h *Handler) Close(c context.Context) {
 type echoContextKey struct{}
 
 func (h *Handler) HandleGrpc(pattern string, handler http.Handler) {
-	h.POST(pattern+"*", func(c echo.Context) error {
+	eh := func(c echo.Context) error {
 		req := c.Request().WithContext(context.WithValue(c.Request().Context(), echoContextKey{}, c))
 		handler.ServeHTTP(c.Response(), req)
 		return nil
-	})
+	}
+	h.POST(pattern+"*", eh)
+	h.GET(pattern+"*", eh)
 }
 
 func EchoContextFromContext(ctx context.Context) (echo.Context, bool) {

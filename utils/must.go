@@ -1,6 +1,9 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 func Must[T any](obj T, err error) T {
 	if err != nil {
@@ -22,9 +25,23 @@ func MustNoError(err error) {
 	}
 }
 
+func interfaceHasNilValue(actual any) bool {
+	value := reflect.ValueOf(actual)
+	kind := value.Kind()
+	nilable := kind == reflect.Slice ||
+		kind == reflect.Chan ||
+		kind == reflect.Func ||
+		kind == reflect.Ptr ||
+		kind == reflect.Map
+
+	// Careful: reflect.Value.IsNil() will panic unless it's an interface, chan, map, func, slice, or ptr
+	// Reference: http://golang.org/pkg/reflect/#Value.IsNil
+	return nilable && value.IsNil()
+}
+
 func NoNil(obj ...interface{}) bool {
 	for _, o := range obj {
-		if o == nil {
+		if o == nil || interfaceHasNilValue(o) {
 			return false
 		}
 	}
