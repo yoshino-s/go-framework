@@ -105,7 +105,7 @@ func marshalEnv() ([]byte, error) {
 	var content []byte
 
 	for key, value := range env {
-		key = strings.ToUpper(prefix + (*envKeyReplacer).Replace(key[1:]))
+		key = strings.ToUpper((*envKeyReplacer).Replace(prefix + key[1:]))
 		content = append(content, []byte(fmt.Sprintf("%s=%s\n", key, value))...)
 	}
 
