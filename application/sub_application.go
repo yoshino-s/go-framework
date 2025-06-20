@@ -41,13 +41,13 @@ func (a *SubApplication) SetLogger(l *zap.Logger) {
 	}
 }
 
-func (a *SubApplication) BeforeSetup(ctx context.Context) {
-	ctx, span := otel.Tracer(ScopeName).Start(ctx, a.spanName(StageBeforeSetup), trace.WithNewRoot())
+func (a *SubApplication) Initialize(ctx context.Context) {
+	ctx, span := otel.Tracer(ScopeName).Start(ctx, a.spanName(StageInitialize), trace.WithNewRoot())
 	defer span.End()
 
 	iter.ForEach(a.sub, func(sa *Application) {
-		a.Logger.Debug(fmt.Sprintf("before setup sub application %T", *sa), log.Context(ctx))
-		(*sa).BeforeSetup(ctx)
+		a.Logger.Debug(fmt.Sprintf("initialize sub application %T", *sa), log.Context(ctx))
+		(*sa).Initialize(ctx)
 	})
 }
 
@@ -58,16 +58,6 @@ func (a *SubApplication) Setup(ctx context.Context) {
 	iter.ForEach(a.sub, func(sa *Application) {
 		a.Logger.Debug(fmt.Sprintf("setup sub application %T", *sa), log.Context(ctx))
 		(*sa).Setup(ctx)
-	})
-}
-
-func (a *SubApplication) AfterSetup(ctx context.Context) {
-	ctx, span := otel.Tracer(ScopeName).Start(ctx, a.spanName(StageAfterSetup), trace.WithNewRoot())
-	defer span.End()
-
-	iter.ForEach(a.sub, func(sa *Application) {
-		a.Logger.Debug(fmt.Sprintf("after setup sub application %T", *sa), log.Context(ctx))
-		(*sa).AfterSetup(ctx)
 	})
 }
 

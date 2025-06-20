@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/sourcegraph/conc/iter"
 	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/log"
 	"go.uber.org/zap"
@@ -15,12 +16,14 @@ var _ Application = (*MainApplication)(nil)
 
 type MainApplication struct {
 	*SubApplication
+	*Container
 	signalChannel chan os.Signal
 }
 
 func NewMainApplication() *MainApplication {
 	return &MainApplication{
 		SubApplication: NewSubApplication("MainApplication"),
+		Container:      &Container{},
 	}
 }
 
@@ -42,9 +45,15 @@ func (a *MainApplication) Setup(ctx context.Context) {
 func (a *MainApplication) Go(ctx context.Context) {
 	a.SetLogger(a.Logger)
 
-	a.BeforeSetup(ctx)
+	a.Initialize(ctx)
+
+	iter.ForEach(a.sub, func(sa *Application) {
+		if err := a.doSet(*sa); err != nil {
+			a.Logger.Fatal("Failed to set application", zap.Error(err))
+		}
+	})
+
 	a.Setup(ctx)
-	a.AfterSetup(ctx)
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -69,4 +78,9 @@ func (a *MainApplication) Go(ctx context.Context) {
 	a.Logger.Debug("Close MainApplication")
 	a.Close(ctx)
 	a.Logger.Debug("Bye!")
+}
+
+func (a *MainApplication) Append(sa Application) {
+	a.SubApplication.Append(sa)
+	a.Register(sa)
 }

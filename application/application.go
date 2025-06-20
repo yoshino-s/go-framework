@@ -10,9 +10,8 @@ import (
 
 type Application interface {
 	Configuration() configuration.Configuration
-	BeforeSetup(context.Context)
+	Initialize(context.Context)
 	Setup(context.Context)
-	AfterSetup(context.Context)
 	Run(context.Context)
 	Close(context.Context)
 	SetLogger(*zap.Logger)
@@ -33,9 +32,8 @@ func NewEmptyApplication(name string) *EmptyApplication {
 }
 
 func (a *EmptyApplication) Configuration() configuration.Configuration { return nil }
-func (a *EmptyApplication) BeforeSetup(context.Context)                {}
+func (a *EmptyApplication) Initialize(context.Context)                 {}
 func (a *EmptyApplication) Setup(context.Context)                      {}
-func (a *EmptyApplication) AfterSetup(context.Context)                 {}
 func (a *EmptyApplication) Run(context.Context)                        {}
 func (a *EmptyApplication) Close(context.Context)                      {}
 func (a *EmptyApplication) SetLogger(l *zap.Logger) {
@@ -45,9 +43,8 @@ func (a *EmptyApplication) SetLogger(l *zap.Logger) {
 type ApplicationStage int
 
 const (
-	StageBeforeSetup ApplicationStage = iota
+	StageInitialize ApplicationStage = iota
 	StageSetup
-	StageAfterSetup
 	StageRun
 	StageClose
 )
@@ -68,18 +65,13 @@ type funcApplication struct {
 
 func (f *funcApplication) Configuration() configuration.Configuration { return nil }
 func (f *funcApplication) SetLogger(l *zap.Logger)                    {}
-func (f *funcApplication) BeforeSetup(ctx context.Context) {
-	if f.stage == StageBeforeSetup {
+func (f *funcApplication) Initialize(ctx context.Context) {
+	if f.stage == StageInitialize {
 		f.f(ctx)
 	}
 }
 func (f *funcApplication) Setup(ctx context.Context) {
 	if f.stage == StageSetup {
-		f.f(ctx)
-	}
-}
-func (f *funcApplication) AfterSetup(ctx context.Context) {
-	if f.stage == StageAfterSetup {
 		f.f(ctx)
 	}
 }
