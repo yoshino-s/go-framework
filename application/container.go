@@ -83,15 +83,15 @@ func (c *Container) doInject(app Application) error {
 
 		// 如果有 `inject` 标签，则尝试从容器中获取实例
 		if tag, ok := field.Tag.Lookup("inject"); ok {
-			var app Application
+			var injectApp Application
 			if tag == "" {
 				// 如果没有指定名称，则使用字段类型作为键
-				app = c.GetInstance(field.Type)
+				injectApp = c.GetInstance(field.Type)
 			} else {
 				// 如果指定了名称，则使用名称查找
-				app = c.GetInstanceByName(tag)
+				injectApp = c.GetInstanceByName(tag)
 			}
-			if app == nil {
+			if injectApp == nil {
 				return errors.Errorf("No instance found for field (%T).%s of type %s", app, field.Name, field.Type)
 			}
 			// 将实例设置到字段中
@@ -102,7 +102,7 @@ func (c *Container) doInject(app Application) error {
 			if fieldValue.Type() != field.Type {
 				return errors.Errorf("Field (%T).%s type mismatch: expected %s, got %s", app, field.Name, field.Type, fieldValue.Type())
 			}
-			fieldValue.Set(reflect.ValueOf(app))
+			fieldValue.Set(reflect.ValueOf(injectApp))
 		}
 	}
 
