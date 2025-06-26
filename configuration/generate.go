@@ -27,13 +27,13 @@ type generateConfiguration struct {
 
 func (*generateConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.Bool("generate-config.enable", false, "generate config enable")
-	flagSet.String("generate-config.format", "yaml", "generate config format, one of json, yaml, env")
+	flagSet.String("generate-config.format", "yaml", "generate config format, one of json, yaml, toml, env")
 	flagSet.String("generate-config.path", "", "generate config path")
 	utils.MustNoError(viper.BindPFlags(flagSet))
 	Register(GenerateConfiguration)
 }
 
-func marshalYaml() (string, error) {
+func marshal(marshal func(map[string]any, map[string]string) (string, error)) (string, error) {
 	v := viper.GetViper()
 
 	value, ok := magic.GetUnexported(v, "pflags")
@@ -62,7 +62,7 @@ func marshalYaml() (string, error) {
 		comments[fmt.Sprintf("$.%s", flag.Name)] = flag.Usage
 	}
 
-	return magic.MarshalYamlWithComments(v.AllSettings(), comments)
+	return marshal(v.AllSettings(), comments)
 }
 
 func walk(v any, prefix string, env map[string]string) {
@@ -119,11 +119,16 @@ func (c *generateConfiguration) Read() {
 		viper.Set("generate-config", nil)
 		var content []byte
 
-		if c.Config.Format == "json" {
+		switch c.Config.Format {
+		case "json":
 			content = utils.Must(json.MarshalIndent(viper.AllSettings(), "", "  "))
-		} else if c.Config.Format == "yaml" {
-			content = []byte(utils.Must(marshalYaml()))
-		} else {
+		case "yaml":
+			content = []byte(utils.Must(marshal(magic.MarshalYamlWithComments)))
+		case "toml":
+			content = []byte(utils.Must(marshal(magic.MarshalTomlWithComments)))
+		case "json-schema":
+			content = []byte(utils.Must(marshal(magic.MarshalJsonSchemaWithComments)))
+		default:
 			content = utils.Must(marshalEnv())
 		}
 

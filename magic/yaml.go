@@ -9,7 +9,7 @@ import (
 )
 
 func MarshalYamlWithComments(
-	v any,
+	v map[string]any,
 	comments map[string]string,
 ) (string, error) {
 	b, err := yaml.Marshal(v)
