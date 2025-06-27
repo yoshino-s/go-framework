@@ -10,7 +10,6 @@ import (
 	"github.com/yoshino-s/go-framework/common"
 	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/utils"
-	"go.opentelemetry.io/contrib/bridges/otelzap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -24,6 +23,8 @@ var _ configuration.Configuration = (*LogConfiguration)(nil)
 
 type LogConfiguration struct {
 	Logger **zap.Logger
+
+	ContribCores *[]zapcore.Core
 }
 
 func isInTest() bool {
@@ -53,7 +54,6 @@ type logConfig struct {
 		Console string `mapstructure:"console"`
 		File    string `mapstructure:"file"`
 	} `mapstructure:"levels"`
-	Otel bool `mapstructure:"otel"`
 }
 
 func (l *LogConfiguration) Register(flagSet *pflag.FlagSet) {
@@ -133,11 +133,7 @@ func (l *LogConfiguration) Read() {
 		cores = append(cores, fileCore)
 	}
 
-	if c.Otel {
-		cores = append(cores,
-			otelzap.NewCore(ScopeName),
-		)
-	}
+	cores = append(cores, *l.ContribCores...)
 
 	logger := zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddStacktrace(zapcore.WarnLevel))
 

@@ -10,6 +10,7 @@ import (
 	"github.com/yoshino-s/go-framework/configuration"
 	"github.com/yoshino-s/go-framework/log"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var _ Application = (*MainApplication)(nil)
@@ -18,6 +19,8 @@ type MainApplication struct {
 	*SubApplication
 	*Container
 	signalChannel chan os.Signal
+
+	loggerCores []zapcore.Core
 }
 
 func NewMainApplication() *MainApplication {
@@ -30,7 +33,8 @@ func NewMainApplication() *MainApplication {
 func (a *MainApplication) Configuration() configuration.Configuration {
 	return &configuration.CombinationConfiguration{
 		&log.LogConfiguration{
-			Logger: &a.Logger,
+			Logger:       &a.Logger,
+			ContribCores: &a.loggerCores,
 		},
 	}
 }
@@ -83,4 +87,5 @@ func (a *MainApplication) Go(ctx context.Context) {
 func (a *MainApplication) Append(sa Application) {
 	a.SubApplication.Append(sa)
 	a.Register(sa)
+	a.loggerCores = append(a.loggerCores, getLoggerCores(sa)...)
 }
