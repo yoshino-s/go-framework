@@ -66,7 +66,6 @@ func (l *LogConfiguration) Register(flagSet *pflag.FlagSet) {
 	flagSet.Int("log.rotate.max_backups", 3, "max number of log file backups")
 	flagSet.String("log.levels.console", "", "log level for console, empty for same as log.level")
 	flagSet.String("log.levels.file", "", "log level for file, empty for same as log.level")
-	flagSet.Bool("log.otel", false, "enable sending logs to otel collector")
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(err)
 	}
