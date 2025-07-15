@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sourcegraph/conc/iter"
 	"github.com/yoshino-s/go-framework/configuration"
@@ -46,8 +47,10 @@ func (a *SubApplication) Initialize(ctx context.Context) {
 	defer span.End()
 
 	iter.ForEach(a.sub, func(sa *Application) {
+		startTime := time.Now()
 		a.Logger.Debug(fmt.Sprintf("initialize sub application %T", *sa), log.Context(ctx))
 		(*sa).Initialize(ctx)
+		a.Logger.Debug(fmt.Sprintf("sub application %T initialized in %s", *sa, time.Since(startTime)), log.Context(ctx))
 	})
 }
 
@@ -56,8 +59,10 @@ func (a *SubApplication) Setup(ctx context.Context) {
 	defer span.End()
 
 	iter.ForEach(a.sub, func(sa *Application) {
+		startTime := time.Now()
 		a.Logger.Debug(fmt.Sprintf("setup sub application %T", *sa), log.Context(ctx))
 		(*sa).Setup(ctx)
+		a.Logger.Debug(fmt.Sprintf("sub application %T setup in %s", *sa, time.Since(startTime)), log.Context(ctx))
 	})
 }
 
@@ -76,7 +81,9 @@ func (a *SubApplication) Close(ctx context.Context) {
 	defer span.End()
 
 	iter.ForEach(a.sub, func(sa *Application) {
+		startTime := time.Now()
 		a.Logger.Debug(fmt.Sprintf("close sub application %T", *sa), log.Context(ctx))
 		(*sa).Close(ctx)
+		a.Logger.Debug(fmt.Sprintf("sub application %T closed in %s", *sa, time.Since(startTime)), log.Context(ctx))
 	})
 }
