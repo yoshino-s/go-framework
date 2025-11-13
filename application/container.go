@@ -1,6 +1,7 @@
 package application
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 
@@ -21,7 +22,7 @@ func (c *Container) Register(app Application) {
 }
 
 // Get retrieves an instance of the specified type from the container.
-func (c *Container) GetInstance(v reflect.Type) Application {
+func (c *Container) GetInstanceByType(v reflect.Type) Application {
 	if app, ok := c.mapper.Load(v); ok {
 		return app.(Application)
 	}
@@ -44,6 +45,33 @@ func (c *Container) GetInstanceByName(name string) Application {
 	return found
 }
 
+func (c *Container) GetInstanceByInterface(ifaceType reflect.Type) Application {
+	var found Application
+	fmt.Println("Searching for interface type:", ifaceType)
+	c.mapper.Range(func(key, value any) bool {
+		k := key.(reflect.Type)
+		if k.Implements(ifaceType) {
+			found = value.(Application)
+			return false // Stop iteration
+		}
+		return true // Continue iteration
+	})
+	if found == nil {
+		return nil
+	}
+	return found
+}
+
+func (c *Container) GetInstance(typ reflect.Type, name string) Application {
+	if name != "" {
+		return c.GetInstanceByName(name)
+	} else if typ.Kind() == reflect.Interface {
+		return c.GetInstanceByInterface(typ)
+	} else {
+		return c.GetInstanceByType(typ)
+	}
+}
+
 func (c *Container) doSet(app Application) error {
 	if err := c.doInject(app); err != nil {
 		return err
@@ -57,7 +85,7 @@ func (c *Container) doSet(app Application) error {
 	args := make([]reflect.Value, 0, numIn-1)
 	for i := 1; i < numIn; i++ {
 		paramType := method.Type.In(i)
-		instance := c.GetInstance(paramType)
+		instance := c.GetInstance(paramType, "")
 		if instance == nil {
 			return errors.Errorf("No instance found for type %d arguments of (%T).Set, type is %v", i, appType, paramType)
 		}
@@ -83,14 +111,8 @@ func (c *Container) doInject(app Application) error {
 
 		// 如果有 `inject` 标签，则尝试从容器中获取实例
 		if tag, ok := field.Tag.Lookup("inject"); ok {
-			var injectApp Application
-			if tag == "" {
-				// 如果没有指定名称，则使用字段类型作为键
-				injectApp = c.GetInstance(field.Type)
-			} else {
-				// 如果指定了名称，则使用名称查找
-				injectApp = c.GetInstanceByName(tag)
-			}
+			injectApp := c.GetInstance(field.Type, tag)
+
 			if injectApp == nil {
 				return errors.Errorf("No instance found for field (%T).%s of type %s", app, field.Name, field.Type)
 			}
@@ -98,9 +120,6 @@ func (c *Container) doInject(app Application) error {
 			fieldValue := appValue.Field(i)
 			if !fieldValue.CanSet() {
 				return errors.Errorf("Cannot set field (%T).%s, field is not settable", app, field.Name)
-			}
-			if fieldValue.Type() != field.Type {
-				return errors.Errorf("Field (%T).%s type mismatch: expected %s, got %s", app, field.Name, field.Type, fieldValue.Type())
 			}
 			fieldValue.Set(reflect.ValueOf(injectApp))
 		}
