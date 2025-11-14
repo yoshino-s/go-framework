@@ -13,7 +13,8 @@ var _ application.Application = (*DemoApp)(nil)
 
 type DemoApp struct {
 	*http.Handler
-	Service *Service `inject:""`
+	Service             *Service                 `inject:""`
+	CasbinAuthorization *SelfCasbinAuthorization `inject:""`
 }
 
 func New() *DemoApp {
@@ -31,5 +32,27 @@ func (a *DemoApp) Setup(ctx context.Context) {
 		}
 		randomNumber := a.Service.GetRandomNumber()
 		return c.JSON(200, map[string]int{"random_number": randomNumber})
+	})
+
+	a.Handler.Group("/perm").Any("/*", func(c echo.Context) error {
+		user := c.QueryParam("user")
+		obj := "/" + c.Param("*")
+		act := c.Request().Method
+		allowed, err := a.CasbinAuthorization.Enforce(user, obj, act)
+		if err != nil {
+			return c.JSON(500, "Error during authorization: "+err.Error())
+		}
+		if !allowed {
+			return c.JSON(403, "Forbidden")
+		}
+		return c.JSON(200, "Access granted to "+user+" for "+obj+" with action "+act)
+	})
+
+	a.Handler.GET("/casbin-dump", func(c echo.Context) error {
+		dump, err := a.CasbinAuthorization.Dump()
+		if err != nil {
+			return c.JSON(500, "Error retrieving dump: "+err.Error())
+		}
+		return c.JSON(200, dump)
 	})
 }

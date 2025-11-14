@@ -15,9 +15,14 @@ type demoStruct struct {
 	*EmptyApplication
 }
 
+type demoNotExistInterface interface {
+	NotExistMethod() string
+}
+
 type demo1Struct struct {
 	*EmptyApplication
-	Int demoInterface `inject:""`
+	Int demoInterface         `inject:""`
+	N   demoNotExistInterface `inject:",optional"`
 }
 
 func (d *demoStruct) DemoMethod() string {
@@ -47,4 +52,5 @@ func TestGetInstance(t *testing.T) {
 	err := container.doInject(demo1App)
 	assert.NoError(t, err, "doInject failed")
 	assert.Equal(t, demoApp, demo1App.Int, "Dependency injection failed")
+	assert.Nil(t, demo1App.N, "Optional dependency should be nil")
 }
