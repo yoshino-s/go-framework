@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-errors/errors"
@@ -104,6 +105,7 @@ func (o *OidcAuthentication) tokenUser(claims map[string]any) (userID, email str
 		if gs, ok := claims["groups"].([]any); ok {
 			for _, g := range gs {
 				if s, ok := g.(string); ok {
+					s = strings.ToLower(s)
 					if r, found := o.config.GroupRoleMap[s]; found {
 						roles = append(roles, r)
 					}

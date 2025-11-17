@@ -1,6 +1,8 @@
 package authn_oidc
 
 import (
+	"strings"
+
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/yoshino-s/go-framework/configuration"
@@ -38,4 +40,12 @@ func (c *OidcAuthenticationConfig) Read() {
 	}
 
 	utils.MustDecodeFromMapstructure(authn.(map[string]any)["oidc"], c)
+
+	if c.GroupRoleMap != nil {
+		lowerMap := make(map[string]string)
+		for k, v := range c.GroupRoleMap {
+			lowerMap[strings.ToLower(k)] = v
+		}
+		c.GroupRoleMap = lowerMap
+	}
 }
