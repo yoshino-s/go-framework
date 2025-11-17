@@ -27,17 +27,14 @@ func (j *JwtAuthentication) Configuration() configuration.Configuration {
 }
 
 // CreateJWT creates a signed JWT with given subject/email/roles.
-func (j *JwtAuthentication) CreateJWT(userID, email string, roles []string, ttl time.Duration) (string, error) {
-	if ttl == 0 {
-		ttl = time.Hour
-	}
+func (j *JwtAuthentication) CreateJWT(userID, email string, roles []string) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
 		Roles:  roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID,
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.config.Ttl)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},

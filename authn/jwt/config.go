@@ -1,6 +1,8 @@
 package authn_jwt
 
 import (
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -11,7 +13,8 @@ import (
 )
 
 type JwtAuthenticationConfig struct {
-	Secret []byte `json:"secret" yaml:"secret" mapstructure:"secret"`
+	Secret []byte        `json:"secret" yaml:"secret" mapstructure:"secret"`
+	Ttl    time.Duration `json:"ttl" yaml:"ttl" mapstructure:"ttl"`
 }
 
 var _ configuration.Configuration = (*JwtAuthenticationConfig)(nil)
