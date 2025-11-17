@@ -10,16 +10,6 @@ import (
 
 func (h *OidcAuthentication) LoginHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		redirect := c.QueryParam("redirect")
-		if redirect != "" {
-			c.SetCookie(&http.Cookie{
-				Name:     "redirect",
-				Value:    redirect,
-				HttpOnly: true,
-				Expires:  time.Now().Add(5 * time.Minute),
-				Path:     "/",
-			})
-		}
 		state, err := randomState(12)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -31,7 +21,7 @@ func (h *OidcAuthentication) LoginHandler() echo.HandlerFunc {
 	}
 }
 
-func (h *OidcAuthentication) CallbackHandler(enableRedirect bool, handler func(c echo.Context, userId, email string, roles []string) error) echo.HandlerFunc {
+func (h *OidcAuthentication) CallbackHandler(handler func(c echo.Context, userId, email string, roles []string) error) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		state := c.QueryParam("state")
 		code := c.QueryParam("code")
@@ -44,17 +34,6 @@ func (h *OidcAuthentication) CallbackHandler(enableRedirect bool, handler func(c
 			return echo.NewHTTPError(http.StatusBadGateway, err.Error())
 		}
 		userID, email, roles := h.tokenUser(claims)
-
-		if redirectCookie, err := c.Cookie("redirect"); err == nil && enableRedirect {
-			// Clear redirect cookie
-			c.SetCookie(&http.Cookie{
-				Name:     "redirect",
-				Value:    "",
-				HttpOnly: true,
-				Expires:  time.Unix(0, 0),
-			})
-			return c.Redirect(http.StatusFound, redirectCookie.Value)
-		}
 
 		return handler(c, userID, email, roles)
 	}
