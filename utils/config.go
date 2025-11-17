@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/base64"
+	"encoding/hex"
 	"reflect"
 	"strconv"
 	"time"
@@ -64,6 +66,18 @@ func autoConvertHookFunc() mapstructure.DecodeHookFunc {
 					return data, err
 				}
 				return reflect.ValueOf(b).Convert(t).Interface(), nil
+			case reflect.Slice:
+				if t.Elem().Kind() == reflect.Uint8 {
+					// try base64, then hex, then raw
+					s := data.(string)
+					if decoded, err := base64.RawStdEncoding.DecodeString(s); err == nil {
+						return decoded, nil
+					} else if decoded, err := hex.DecodeString(s); err == nil {
+						return decoded, nil
+					} else {
+						return []byte(s), nil
+					}
+				}
 			}
 		}
 		return data, nil
