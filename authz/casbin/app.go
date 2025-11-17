@@ -89,31 +89,9 @@ func (c *CasbinAuthorization) GetRole(user string) ([]string, error) {
 }
 
 func (c *CasbinAuthorization) SetRole(user string, role []string) error {
-	r, err := c.Enforcer.GetRoleManager().GetRoles(user)
-	if err != nil {
+	if _, err := c.Enforcer.DeleteRolesForUser(user); err != nil {
 		return err
 	}
-	rolesToRemove := difference(r, role)
-	for _, rr := range rolesToRemove {
-		_, err := c.Enforcer.DeleteRoleForUser(user, rr)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = c.Enforcer.AddRolesForUser(user, role)
+	_, err := c.Enforcer.AddRolesForUser(user, role)
 	return err
-}
-
-func difference(slice1, slice2 []string) []string {
-	m := make(map[string]bool)
-	for _, s2 := range slice2 {
-		m[s2] = true
-	}
-	var diff []string
-	for _, s1 := range slice1 {
-		if _, found := m[s1]; !found {
-			diff = append(diff, s1)
-		}
-	}
-	return diff
 }
