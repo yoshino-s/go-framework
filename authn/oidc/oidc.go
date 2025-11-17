@@ -9,11 +9,14 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-errors/errors"
+	"github.com/yoshino-s/go-framework/application"
+	"github.com/yoshino-s/go-framework/configuration"
 	"golang.org/x/oauth2"
 )
 
 // OidcAuthentication encapsulates OIDC provider interaction.
 type OidcAuthentication struct {
+	*application.EmptyApplication
 	config      OidcAuthenticationConfig
 	Provider    *oidc.Provider
 	Verifier    *oidc.IDTokenVerifier
@@ -22,7 +25,13 @@ type OidcAuthentication struct {
 
 // NewOIDCAuth initializes OIDC provider.
 func NewOidcAuthentication() *OidcAuthentication {
-	return &OidcAuthentication{}
+	return &OidcAuthentication{
+		EmptyApplication: application.NewEmptyApplication("OidcAuthentication"),
+	}
+}
+
+func (o *OidcAuthentication) Configuration() configuration.Configuration {
+	return &o.config
 }
 
 func (o *OidcAuthentication) Initialize(ctx context.Context) {
