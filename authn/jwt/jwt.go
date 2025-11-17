@@ -22,12 +22,12 @@ func NewJwtAuthentication() *JwtAuthentication {
 	}
 }
 
-func (j *JwtAuthentication) configuration() configuration.Configuration {
+func (j *JwtAuthentication) Configuration() configuration.Configuration {
 	return &j.config
 }
 
 // CreateJWT creates a signed JWT with given subject/email/roles.
-func (j *JwtAuthentication) CreateJWT(secret, userID, email string, roles []string, ttl time.Duration) (string, error) {
+func (j *JwtAuthentication) CreateJWT(userID, email string, roles []string, ttl time.Duration) (string, error) {
 	if ttl == 0 {
 		ttl = time.Hour
 	}
@@ -43,16 +43,16 @@ func (j *JwtAuthentication) CreateJWT(secret, userID, email string, roles []stri
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(j.config.Secret))
 }
 
 // ParseJWT parses and validates JWT string.
-func (j *JwtAuthentication) ParseJWT(secret []byte, tokenStr string) (*Claims, error) {
+func (j *JwtAuthentication) ParseJWT(tokenStr string) (*Claims, error) {
 	parsed, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, errors.New("unexpected signing method")
 		}
-		return secret, nil
+		return j.config.Secret, nil
 	})
 	if err != nil {
 		return nil, err

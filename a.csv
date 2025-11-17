@@ -1,6 +1,0 @@
-p, admin, /obj0/:id, .*
-p, admin, /obj0/:id, 
-p, user0, /obj1/1, GET
-p, user1, /obj1/2, GET
-g, user0, admin
-g, user1, admin

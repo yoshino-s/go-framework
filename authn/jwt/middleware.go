@@ -32,7 +32,7 @@ func (j *JwtAuthentication) Middleware(config *JwtMiddlewareConfig) echo.Middlew
 				return echo.NewHTTPError(http.StatusUnauthorized, "missing token")
 			}
 
-			claims, err := j.ParseJWT(j.config.Secrets, tokenStr)
+			claims, err := j.ParseJWT(tokenStr)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token: "+err.Error())
 			}

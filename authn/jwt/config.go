@@ -11,13 +11,13 @@ import (
 )
 
 type JwtAuthenticationConfig struct {
-	Secrets []byte `json:"secrets" yaml:"secrets" mapstructure:"secrets"`
+	Secret []byte `json:"secret" yaml:"secret" mapstructure:"secret"`
 }
 
 var _ configuration.Configuration = (*JwtAuthenticationConfig)(nil)
 
 func (c *JwtAuthenticationConfig) Register(flagSet *pflag.FlagSet) {
-	flagSet.String("authn.jwt.secrets", "", "JWT secret keys, separated by commas")
+	flagSet.String("authn.jwt.secret", "", "JWT secret key")
 	utils.MustNoError(viper.BindPFlags(flagSet))
 	configuration.Register(c)
 }
