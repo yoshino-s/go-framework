@@ -20,7 +20,7 @@ type JwtAuthenticationConfig struct {
 var _ configuration.Configuration = (*JwtAuthenticationConfig)(nil)
 
 func (c *JwtAuthenticationConfig) Register(flagSet *pflag.FlagSet) {
-	flagSet.String("authn.jwt.secret", "", "JWT secret key")
+	flagSet.BytesBase64("authn.jwt.secret", []byte{}, "JWT secret key")
 	utils.MustNoError(viper.BindPFlags(flagSet))
 	configuration.Register(c)
 }
@@ -32,6 +32,10 @@ func (c *JwtAuthenticationConfig) Read() {
 	}
 
 	utils.MustDecodeFromMapstructure(authn.(map[string]any)["jwt"], c)
+
+	if len(c.Secret) == 0 {
+		panic("authn.jwt.secret must be set")
+	}
 }
 
 type JwtMiddlewareConfig struct {
