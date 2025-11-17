@@ -48,8 +48,8 @@ type AuthGetter func(c echo.Context) (bool, string)
 
 // Claims represents application JWT claims.
 type Claims struct {
-	UserID string   `json:"sub"`
-	Email  string   `json:"email"`
-	Roles  []string `json:"roles"`
-	jwt.RegisteredClaims
+	UserID               string   `json:"sub"`
+	Email                string   `json:"email"`
+	Roles                []string `json:"roles"`
+	jwt.RegisteredClaims `json:",inline"`
 }
