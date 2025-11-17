@@ -28,17 +28,24 @@ func (j *JwtAuthentication) Middleware(config *JwtMiddlewareConfig) echo.Middlew
 				}
 			}
 
-			if found {
-				claims, err := j.ParseJWT(tokenStr)
-				if err != nil {
-					return echo.NewHTTPError(http.StatusUnauthorized, "invalid token: "+err.Error())
-				}
+			isPublic := config.Public != nil && config.Public(c)
+
+			if !isPublic && !found {
+				return echo.NewHTTPError(http.StatusUnauthorized, "missing token")
+			}
+
+			var claims *Claims
+			var err error
+			claims, err = j.ParseJWT(tokenStr)
+
+			if err == nil {
 				c.Set(ContextClaimsKey, claims)
 			} else {
-				if !(config.Public != nil && config.Public(c)) {
-					return echo.NewHTTPError(http.StatusUnauthorized, "missing token")
+				if !isPublic {
+					return echo.NewHTTPError(http.StatusUnauthorized, "invalid token: "+err.Error())
 				}
 			}
+
 			return next(c)
 		}
 	}
