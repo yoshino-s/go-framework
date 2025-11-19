@@ -1,14 +1,13 @@
 package authn_jwt
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
 
-const (
-	ContextClaimsKey = "claims"
-)
+type ContextClaimsKey struct{}
 
 func (j *JwtAuthentication) Middleware(config *JwtMiddlewareConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -39,7 +38,9 @@ func (j *JwtAuthentication) Middleware(config *JwtMiddlewareConfig) echo.Middlew
 			claims, err = j.ParseJWT(tokenStr)
 
 			if err == nil {
-				c.Set(ContextClaimsKey, claims)
+				c.SetRequest(
+					c.Request().WithContext(context.WithValue(c.Request().Context(), ContextClaimsKey{}, claims)),
+				)
 			} else {
 				if !isPublic {
 					return echo.NewHTTPError(http.StatusUnauthorized, "invalid token: "+err.Error())
@@ -52,9 +53,9 @@ func (j *JwtAuthentication) Middleware(config *JwtMiddlewareConfig) echo.Middlew
 }
 
 // GetClaims helper.
-func GetClaims(c echo.Context) *Claims {
-	if v, ok := c.Get(ContextClaimsKey).(*Claims); ok {
-		return v
+func GetClaims(c context.Context) *Claims {
+	if claims, ok := c.Value(ContextClaimsKey{}).(*Claims); ok {
+		return claims
 	}
 	return nil
 }
